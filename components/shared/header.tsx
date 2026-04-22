@@ -1,6 +1,7 @@
 "use client";
 
-import { Bell } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Menu, Bell } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,37 +11,74 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { MOCK_USER } from "@/lib/mock-data";
 
-export function Header() {
+const PAGE_TITLES: Record<string, string> = {
+  "/": "Dashboard",
+  "/leads": "Leads",
+  "/pipeline": "Pipeline",
+  "/settings": "Configurações",
+  "/settings/billing": "Planos e cobrança",
+};
+
+function usePageTitle() {
+  const pathname = usePathname();
+  for (const [path, title] of Object.entries(PAGE_TITLES)) {
+    if (path !== "/" && pathname.startsWith(path)) return title;
+  }
+  return PAGE_TITLES["/"] ?? "Dashboard";
+}
+
+interface HeaderProps {
+  onMenuClick?: () => void;
+}
+
+export function Header({ onMenuClick }: HeaderProps) {
+  const title = usePageTitle();
+
   return (
-    <header className="flex h-16 items-center justify-between border-b border-border bg-card px-6">
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-muted-foreground">
-          Workspace Demo
-        </span>
+    <header className="flex h-14 items-center justify-between border-b border-border bg-card px-4">
+      <div className="flex items-center gap-3">
+        {/* Hamburger — só aparece no mobile */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          onClick={onMenuClick}
+          aria-label="Abrir menu"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+
+        <h1 className="text-base font-semibold text-foreground">{title}</h1>
       </div>
 
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" className="relative">
+      <div className="flex items-center gap-1">
+        <Button variant="ghost" size="icon" className="relative" aria-label="Notificações">
           <Bell className="h-4 w-4" />
         </Button>
 
         <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-2 rounded-lg p-1 transition-colors hover:bg-secondary">
-            <Avatar className="h-8 w-8">
-              <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
-                US
+          <DropdownMenuTrigger className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-secondary focus-visible:outline-none">
+            <Avatar className="h-7 w-7">
+              <AvatarFallback className="bg-primary text-primary-foreground text-xs font-bold">
+                {MOCK_USER.avatarInitials}
               </AvatarFallback>
             </Avatar>
-            <span className="text-sm font-medium text-foreground">
-              usuário@email.com
+            <span className="hidden text-sm font-medium text-foreground sm:block">
+              {MOCK_USER.name.split(" ")[0]}
             </span>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
+            <div className="px-2 py-1.5">
+              <p className="text-sm font-medium text-foreground">{MOCK_USER.name}</p>
+              <p className="text-xs text-muted-foreground">{MOCK_USER.email}</p>
+            </div>
+            <DropdownMenuSeparator />
             <DropdownMenuItem>Perfil</DropdownMenuItem>
             <DropdownMenuItem>Configurações</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">
+            <DropdownMenuItem className="text-destructive focus:text-destructive">
               Sair
             </DropdownMenuItem>
           </DropdownMenuContent>
