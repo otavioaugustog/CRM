@@ -97,6 +97,7 @@ export default function LeadsPage() {
             </SheetDescription>
           </SheetHeader>
           <LeadForm
+            key={editingLead?.id ?? "new"}
             lead={editingLead ?? undefined}
             onSuccess={handleSave}
             onCancel={() => setSheetOpen(false)}
