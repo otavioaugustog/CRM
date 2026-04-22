@@ -23,10 +23,12 @@ const PAGE_TITLES: Record<string, string> = {
 
 function usePageTitle() {
   const pathname = usePathname();
-  for (const [path, title] of Object.entries(PAGE_TITLES)) {
-    if (path !== "/" && pathname.startsWith(path)) return title;
+  // Sort longest path first so /settings/billing matches before /settings
+  const sorted = Object.entries(PAGE_TITLES).sort((a, b) => b[0].length - a[0].length);
+  for (const [path, title] of sorted) {
+    if (path === "/" ? pathname === "/" : pathname.startsWith(path)) return title;
   }
-  return PAGE_TITLES["/"] ?? "Dashboard";
+  return "Dashboard";
 }
 
 interface HeaderProps {
