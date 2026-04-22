@@ -56,102 +56,102 @@
   --color-stage-perdido: var(--stage-perdido);
 }
 
-/* ─── Light mode ─────────────────────────────────────────────── */
-:root {
-  --background: #f8fafc;        /* slate-50 */
-  --foreground: #0f172a;        /* slate-900 */
-  --card: #ffffff;
-  --card-foreground: #0f172a;
-  --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --primary: #4f46e5;           /* indigo-600 */
-  --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;         /* slate-100 */
-  --secondary-foreground: #0f172a;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;  /* slate-500 */
-  --accent: #f1f5f9;
-  --accent-foreground: #0f172a;
-  --destructive: #f43f5e;       /* rose-500 */
-  --border: #e2e8f0;            /* slate-200 */
-  --input: #e2e8f0;
-  --ring: #4f46e5;
-  --radius: 0.5rem;
-
-  /* Charts */
-  --chart-1: #4f46e5;           /* indigo */
-  --chart-2: #10b981;           /* emerald */
-  --chart-3: #f59e0b;           /* amber */
-  --chart-4: #8b5cf6;           /* violet */
-  --chart-5: #f43f5e;           /* rose */
-
-  /* Sidebar */
-  --sidebar: #ffffff;
-  --sidebar-foreground: #0f172a;
-  --sidebar-primary: #4f46e5;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f1f5f9;
-  --sidebar-accent-foreground: #0f172a;
-  --sidebar-border: #e2e8f0;
-  --sidebar-ring: #4f46e5;
-
-  /* Kanban stages */
-  --stage-novo: #f1f5f9;        /* slate-100 */
-  --stage-contato: #eff6ff;     /* blue-50 */
-  --stage-proposta: #f5f3ff;    /* violet-50 */
-  --stage-negociacao: #fffbeb;  /* amber-50 */
-  --stage-ganho: #ecfdf5;       /* emerald-50 */
-  --stage-perdido: #fff1f2;     /* rose-50 */
-}
-
-/* ─── Dark mode (PipeFlow palette) ───────────────────────────── */
-.dark {
-  --background: #0f172a;        /* slate-900 */
-  --foreground: #f1f5f9;        /* slate-100 */
-  --card: #1e293b;              /* slate-800 */
-  --card-foreground: #f1f5f9;
-  --popover: #1e293b;
-  --popover-foreground: #f1f5f9;
-  --primary: #6366f1;           /* indigo-500 — mais legível no escuro */
-  --primary-foreground: #ffffff;
-  --secondary: #334155;         /* slate-700 */
-  --secondary-foreground: #f1f5f9;
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;  /* slate-400 */
-  --accent: #334155;
-  --accent-foreground: #f1f5f9;
-  --destructive: #fb7185;       /* rose-400 */
-  --border: #334155;            /* slate-700 */
-  --input: #334155;
-  --ring: #6366f1;
-
-  /* Charts */
-  --chart-1: #818cf8;           /* indigo-400 */
-  --chart-2: #34d399;           /* emerald-400 */
-  --chart-3: #fbbf24;           /* amber-400 */
-  --chart-4: #a78bfa;           /* violet-400 */
-  --chart-5: #fb7185;           /* rose-400 */
-
-  /* Sidebar — ligeiramente mais escura que o card */
-  --sidebar: #0a0f1e;
-  --sidebar-foreground: #f1f5f9;
-  --sidebar-primary: #6366f1;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1e293b;
-  --sidebar-accent-foreground: #f1f5f9;
-  --sidebar-border: #1e293b;
-  --sidebar-ring: #6366f1;
-
-  /* Kanban stages (dark) */
-  --stage-novo: #1e293b;
-  --stage-contato: #1e3a5f;
-  --stage-proposta: #2e1065;
-  --stage-negociacao: #422006;
-  --stage-ganho: #064e3b;
-  --stage-perdido: #4c0519;
-}
-
 @layer base {
+  /* ─── Light mode ─────────────────────────────────────────────── */
+  :root {
+    --background: #f8fafc;        /* slate-50 */
+    --foreground: #0f172a;        /* slate-900 */
+    --card: #ffffff;
+    --card-foreground: #0f172a;
+    --popover: #ffffff;
+    --popover-foreground: #0f172a;
+    --primary: #4f46e5;           /* indigo-600 */
+    --primary-foreground: #ffffff;
+    --secondary: #f1f5f9;         /* slate-100 */
+    --secondary-foreground: #0f172a;
+    --muted: #f1f5f9;
+    --muted-foreground: #64748b;  /* slate-500 */
+    --accent: #f1f5f9;
+    --accent-foreground: #0f172a;
+    --destructive: #f43f5e;       /* rose-500 */
+    --border: #e2e8f0;            /* slate-200 */
+    --input: #e2e8f0;
+    --ring: #4f46e5;
+    --radius: 0.5rem;
+
+    /* Charts */
+    --chart-1: #4f46e5;
+    --chart-2: #10b981;
+    --chart-3: #f59e0b;
+    --chart-4: #8b5cf6;
+    --chart-5: #f43f5e;
+
+    /* Sidebar */
+    --sidebar: #ffffff;
+    --sidebar-foreground: #0f172a;
+    --sidebar-primary: #4f46e5;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #f1f5f9;
+    --sidebar-accent-foreground: #0f172a;
+    --sidebar-border: #e2e8f0;
+    --sidebar-ring: #4f46e5;
+
+    /* Kanban stages */
+    --stage-novo: #f1f5f9;
+    --stage-contato: #eff6ff;
+    --stage-proposta: #f5f3ff;
+    --stage-negociacao: #fffbeb;
+    --stage-ganho: #ecfdf5;
+    --stage-perdido: #fff1f2;
+  }
+
+  /* ─── Dark mode (PipeFlow palette) ───────────────────────────── */
+  .dark {
+    --background: #0f172a;        /* slate-900 */
+    --foreground: #f1f5f9;        /* slate-100 */
+    --card: #1e293b;              /* slate-800 */
+    --card-foreground: #f1f5f9;
+    --popover: #1e293b;
+    --popover-foreground: #f1f5f9;
+    --primary: #6366f1;           /* indigo-500 */
+    --primary-foreground: #ffffff;
+    --secondary: #334155;         /* slate-700 */
+    --secondary-foreground: #f1f5f9;
+    --muted: #1e293b;
+    --muted-foreground: #94a3b8;  /* slate-400 */
+    --accent: #334155;
+    --accent-foreground: #f1f5f9;
+    --destructive: #fb7185;       /* rose-400 */
+    --border: #334155;            /* slate-700 */
+    --input: #334155;
+    --ring: #6366f1;
+
+    /* Charts */
+    --chart-1: #818cf8;
+    --chart-2: #34d399;
+    --chart-3: #fbbf24;
+    --chart-4: #a78bfa;
+    --chart-5: #fb7185;
+
+    /* Sidebar */
+    --sidebar: #0a0f1e;
+    --sidebar-foreground: #f1f5f9;
+    --sidebar-primary: #6366f1;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #1e293b;
+    --sidebar-accent-foreground: #f1f5f9;
+    --sidebar-border: #1e293b;
+    --sidebar-ring: #6366f1;
+
+    /* Kanban stages (dark) */
+    --stage-novo: #1e293b;
+    --stage-contato: #1e3a5f;
+    --stage-proposta: #2e1065;
+    --stage-negociacao: #422006;
+    --stage-ganho: #064e3b;
+    --stage-perdido: #4c0519;
+  }
+
   * {
     @apply border-border outline-ring/50;
   }
