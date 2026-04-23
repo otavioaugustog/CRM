@@ -91,6 +91,14 @@ feat: telas de auth (login, signup, forgot-password) com validação Zod
 - [x] Instalar `@supabase/ssr` e `@supabase/supabase-js` *(feat/supabase-core — PR #3)*
 - [x] Criar `lib/supabase/client.ts` (`createBrowserClient`) *(feat/supabase-core — PR #3)*
 - [x] Criar `lib/supabase/server.ts` (`createServerClient` com cookies) *(feat/supabase-core — PR #3)*
+- [x] Migrations & RLS — schema completo aplicado no Supabase *(feat/supabase-core — PR #4)*
+  - [x] `001_workspaces.sql`: workspaces + workspace_members, trigger bootstrap admin, `get_user_workspace_ids()`
+  - [x] `002_leads.sql`: leads, índice GIN full-text, RLS CRUD para membros
+  - [x] `003_deals.sql`: deals, índice por stage (kanban), RLS — DELETE restrito a admins
+  - [x] `004_activities.sql`: activities, índice de timeline, RLS — DELETE restrito ao autor
+  - [x] `005_invitations.sql`: invitations, token hex, `accept_invitation()` SECURITY DEFINER, partial unique index
+  - [x] `types/supabase.ts`: Database type (Row/Insert/Update) para supabase-js v2
+  - [x] Clientes `lib/supabase/{client,server}.ts` tipados com `Database`
 - [ ] Criar `middleware.ts` com proteção de `/dashboard` e redirect para `/login`
 - [ ] Conectar form de signup → `supabase.auth.signUp()`
 - [ ] Conectar form de login → `supabase.auth.signInWithPassword()`
