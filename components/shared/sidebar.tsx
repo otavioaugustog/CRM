@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 export const NAV_LINKS = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/leads", label: "Leads", icon: Users },
   { href: "/pipeline", label: "Pipeline", icon: Kanban },
   { href: "/settings", label: "Configurações", icon: Settings },
@@ -46,7 +46,9 @@ export function SidebarContent() {
       <nav className="flex flex-1 flex-col gap-0.5 p-2">
         {NAV_LINKS.map(({ href, label, icon: Icon }) => {
           const isActive =
-            href === "/" ? pathname === "/" : pathname.startsWith(href);
+            href === "/dashboard"
+              ? pathname === "/dashboard"
+              : pathname.startsWith(href);
           return (
             <Link
               key={href}

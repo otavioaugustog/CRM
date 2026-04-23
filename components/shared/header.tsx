@@ -14,7 +14,7 @@ import {
 import { MOCK_USER } from "@/lib/mock-data";
 
 const PAGE_TITLES: Record<string, string> = {
-  "/": "Dashboard",
+  "/dashboard": "Dashboard",
   "/leads": "Leads",
   "/pipeline": "Pipeline",
   "/settings": "Configurações",
@@ -26,7 +26,7 @@ function usePageTitle() {
   // Sort longest path first so /settings/billing matches before /settings
   const sorted = Object.entries(PAGE_TITLES).sort((a, b) => b[0].length - a[0].length);
   for (const [path, title] of sorted) {
-    if (path === "/" ? pathname === "/" : pathname.startsWith(path)) return title;
+    if (pathname.startsWith(path)) return title;
   }
   return "Dashboard";
 }
