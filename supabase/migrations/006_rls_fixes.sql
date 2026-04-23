@@ -57,7 +57,23 @@ CREATE TRIGGER trg_new_workspace_creator
   AFTER INSERT ON public.workspaces
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_workspace();
 
--- ─── FIX 2: invitations — partial unique index ───────────────
+-- ─── FIX 2: invitations — policy select usa auth.jwt() ──────
+
+-- SELECT FROM auth.users não é acessível ao role anon.
+-- Substituído por auth.jwt()->>'email' (disponível a todos os roles).
+DROP POLICY IF EXISTS "invitations_select" ON public.invitations;
+
+CREATE POLICY "invitations_select"
+  ON public.invitations FOR SELECT
+  USING (
+    workspace_id IN (
+      SELECT workspace_id FROM public.workspace_members
+      WHERE user_id = auth.uid() AND role = 'admin'
+    )
+    OR (auth.uid() IS NOT NULL AND email = (auth.jwt()->>'email'))
+  );
+
+-- ─── FIX 3: invitations — partial unique index ───────────────
 
 -- Remove constraint que bloqueava reenvio após expiração/aceitação
 ALTER TABLE public.invitations

@@ -41,7 +41,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_invitations_unique_pending
 
 ALTER TABLE public.invitations ENABLE ROW LEVEL SECURITY;
 
--- Admin vê todos os convites do workspace; convidado vê o próprio convite
+-- Admin vê todos os convites do workspace; convidado vê o próprio convite.
+-- Usa auth.jwt()->>'email' em vez de SELECT FROM auth.users porque o role
+-- anon não tem permissão de leitura no schema auth.
 CREATE POLICY "invitations_select"
   ON public.invitations FOR SELECT
   USING (
@@ -49,7 +51,7 @@ CREATE POLICY "invitations_select"
       SELECT workspace_id FROM public.workspace_members
       WHERE user_id = auth.uid() AND role = 'admin'
     )
-    OR email = (SELECT email FROM auth.users WHERE id = auth.uid())
+    OR (auth.uid() IS NOT NULL AND email = (auth.jwt()->>'email'))
   );
 
 -- Apenas admins podem criar convites
