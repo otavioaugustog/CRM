@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Check, ChevronsUpDown, Plus, Building2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Check, ChevronsUpDown, Plus } from "lucide-react";
 import { cn, getInitials } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -14,11 +14,52 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { MOCK_WORKSPACES, MOCK_CURRENT_WORKSPACE } from "@/lib/mock-data";
+import { createClient } from "@/lib/supabase/client";
 import type { Workspace } from "@/types";
 
+const STORAGE_KEY = "pipeflow:workspace";
+
 export function WorkspaceSwitcher() {
-  const [current, setCurrent] = useState<Workspace>(MOCK_CURRENT_WORKSPACE);
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [current, setCurrent] = useState<Workspace | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    async function load() {
+      // cast necessário — supabase-js v2.104+ usa PostgrestVersion que difere do tipo manual
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: raw } = await (supabase as any)
+        .from("workspaces")
+        .select("*")
+        .order("created_at");
+
+      const data = raw as Workspace[] | null;
+      if (!data || data.length === 0) return;
+
+      setWorkspaces(data);
+
+      const savedId = localStorage.getItem(STORAGE_KEY);
+      const saved = savedId ? data.find((w) => w.id === savedId) : null;
+      setCurrent(saved ?? data[0]);
+    }
+
+    load();
+  }, []);
+
+  function switchWorkspace(ws: Workspace) {
+    setCurrent(ws);
+    localStorage.setItem(STORAGE_KEY, ws.id);
+  }
+
+  if (!current) {
+    return (
+      <div className="flex h-10 w-full items-center gap-2 rounded-lg px-2 py-2">
+        <div className="h-7 w-7 shrink-0 rounded-md bg-muted animate-pulse" />
+        <div className="h-3 flex-1 rounded bg-muted animate-pulse" />
+      </div>
+    );
+  }
 
   return (
     <DropdownMenu>
@@ -32,28 +73,23 @@ export function WorkspaceSwitcher() {
           <span className="truncate text-sm font-semibold text-sidebar-foreground">
             {current.name}
           </span>
-          <span className="text-xs text-muted-foreground capitalize">
+          <span className="text-xs text-muted-foreground">
             {current.plan === "pro" ? "Pro" : "Free"}
           </span>
         </div>
         <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent
-        side="bottom"
-        align="start"
-        className="w-60"
-        sideOffset={4}
-      >
+      <DropdownMenuContent side="bottom" align="start" className="w-60" sideOffset={4}>
         <DropdownMenuGroup>
           <DropdownMenuLabel className="text-xs text-muted-foreground">
             Workspaces
           </DropdownMenuLabel>
 
-          {MOCK_WORKSPACES.map((ws) => (
+          {workspaces.map((ws) => (
             <DropdownMenuItem
               key={ws.id}
-              onClick={() => setCurrent(ws)}
+              onClick={() => switchWorkspace(ws)}
               className="flex items-center gap-2"
             >
               <Avatar className="h-6 w-6 shrink-0 rounded-md">

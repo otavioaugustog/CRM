@@ -10,7 +10,7 @@
 |---|---|---|---|
 | 1 | Setup & Fundação ✅ | `feat/setup` | Projeto, design system, layout shell |
 | 2 | Auth — UI ✅ | `feat/auth-ui` | Telas de login/signup com dados mock |
-| 3 | Auth — Backend 🔄 | `feat/auth-backend` | Supabase Auth + middleware + sessão real |
+| 3 | Auth — Backend ✅ | `feat/auth-backend` | Supabase Auth + middleware + sessão real |
 | 4 | Leads — UI ✅ | `feat/leads-ui` | Listagem, formulário e detalhe com mock |
 | 5 | Leads — Backend | `feat/leads-backend` | CRUD real + RLS + filtros no banco |
 | 6 | Kanban — UI ✅ | `feat/kanban-ui` | Board drag-and-drop com dados mock |
@@ -81,9 +81,9 @@ feat: telas de auth (login, signup, forgot-password) com validação Zod
 
 ---
 
-## M3 — Auth — Backend 🔄
+## M3 — Auth — Backend ✅
 
-**Branch:** `feat/auth-backend`
+**Branch:** `feat/auth-backend` → merged em `main`
 **Objetivo:** Conectar formulários de auth ao Supabase Auth. Sessão persistente, middleware de proteção de rotas, redirect automático.
 
 ### Entregas
@@ -99,19 +99,24 @@ feat: telas de auth (login, signup, forgot-password) com validação Zod
   - [x] `005_invitations.sql`: invitations, token hex, `accept_invitation()` SECURITY DEFINER, partial unique index
   - [x] `types/supabase.ts`: Database type (Row/Insert/Update) para supabase-js v2
   - [x] Clientes `lib/supabase/{client,server}.ts` tipados com `Database`
-- [ ] Criar `middleware.ts` com proteção de `/dashboard` e redirect para `/login`
-- [ ] Conectar form de signup → `supabase.auth.signUp()`
-- [ ] Conectar form de login → `supabase.auth.signInWithPassword()`
-- [ ] Conectar form de forgot-password → `supabase.auth.resetPasswordForEmail()`
-- [ ] Redirect pós-login para `/(dashboard)`
-- [ ] Redirect pós-logout para `/login`
-- [ ] Botão "Sair" no Header conectado ao `supabase.auth.signOut()`
-- [ ] Exibir e-mail do usuário logado no Header
-- [ ] Testar: login, sessão persistente ao recarregar, redirect sem sessão
+- [x] Criar `proxy.ts` com proteção de rotas (Next.js 16 — substitui `middleware.ts` depreciado)
+- [x] Conectar form de signup → `supabase.auth.signUp()` + tela "verifique seu e-mail"
+- [x] Conectar form de login → `supabase.auth.signInWithPassword()`
+- [x] Conectar form de forgot-password → `supabase.auth.resetPasswordForEmail()`
+- [x] Redirect pós-login para `/dashboard`
+- [x] Redirect pós-logout para `/login` via Server Action `signOut()`
+- [x] Botão "Sair" no Header conectado ao `signOut()` Server Action
+- [x] Exibir nome e e-mail do usuário logado no Header
+- [x] Criar `/api/auth/callback` — troca PKCE code por sessão, respeita `?next=`
+- [x] Criar `/onboarding` — criação de workspace + trigger insere admin automaticamente
+- [x] Guard no `app/(dashboard)/layout.tsx` — sem workspace → redirect `/onboarding`
+- [x] `007_perf_and_security.sql` — RLS com `(select auth.uid())` + índices FK faltantes
+- [x] Testar fluxo completo: registro → confirmação → onboarding → dashboard → logout
+- [x] Verificado no Supabase: usuário confirmado, workspace e membro admin criados
 
 **Commit final:**
 ```
-feat: auth backend — Supabase Auth, middleware de sessão e proteção de rotas
+feat: auth backend — Supabase Auth, proxy, onboarding e proteção de rotas
 ```
 
 ---

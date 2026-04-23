@@ -6,10 +6,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, MailCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { createClient } from "@/lib/supabase/client";
 
 const schema = z
   .object({
@@ -28,6 +29,8 @@ type FormData = z.infer<typeof schema>;
 export default function SignupPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [confirmedEmail, setConfirmedEmail] = useState<string | null>(null);
 
   const {
     register,
@@ -35,10 +38,65 @@ export default function SignupPage() {
     formState: { errors },
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
-  async function onSubmit(_data: FormData) {
+  async function onSubmit(data: FormData) {
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-    router.push("/onboarding");
+    setAuthError(null);
+
+    const supabase = createClient();
+    const { data: result, error } = await supabase.auth.signUp({
+      email: data.email,
+      password: data.password,
+      options: {
+        data: { name: data.name },
+        // após confirmar o e-mail, o callback redireciona para /onboarding
+        emailRedirectTo: `${window.location.origin}/api/auth/callback?next=/onboarding`,
+      },
+    });
+
+    if (error) {
+      if (error.message.toLowerCase().includes("already registered")) {
+        setAuthError("Este e-mail já está cadastrado. Tente fazer login.");
+      } else {
+        setAuthError("Erro ao criar conta. Tente novamente.");
+      }
+      setLoading(false);
+      return;
+    }
+
+    if (result.session) {
+      // confirmação de e-mail desativada: sessão criada imediatamente
+      router.push("/onboarding");
+      router.refresh();
+      return;
+    }
+
+    // confirmação de e-mail ativada: sem sessão ainda
+    setConfirmedEmail(data.email);
+    setLoading(false);
+  }
+
+  // tela de "verifique seu e-mail"
+  if (confirmedEmail) {
+    return (
+      <div className="rounded-xl border border-border bg-card p-8 shadow-sm text-center">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+          <MailCheck className="h-6 w-6 text-primary" />
+        </div>
+        <h1 className="text-xl font-semibold text-foreground">Verifique seu e-mail</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Enviamos um link de confirmação para{" "}
+          <span className="font-medium text-foreground">{confirmedEmail}</span>.
+          <br />
+          Clique no link para ativar sua conta e criar seu workspace.
+        </p>
+        <Link
+          href="/login"
+          className="mt-6 inline-block text-sm font-medium text-primary hover:underline"
+        >
+          Voltar para o login
+        </Link>
+      </div>
+    );
   }
 
   return (
@@ -113,11 +171,13 @@ export default function SignupPage() {
           )}
         </div>
 
-        <Button
-          type="submit"
-          disabled={loading}
-          className="w-full h-9 mt-2"
-        >
+        {authError && (
+          <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {authError}
+          </p>
+        )}
+
+        <Button type="submit" disabled={loading} className="w-full h-9 mt-2">
           {loading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
