@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { Search, Pencil, Trash2, Users } from "lucide-react";
 import type { Lead, LeadStatus } from "@/types";
 import { cn, formatDate } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -15,10 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const STATUS_CONFIG: Record<
-  LeadStatus,
-  { label: string; className: string }
-> = {
+const STATUS_CONFIG: Record<LeadStatus, { label: string; className: string }> = {
   ativo: {
     label: "Ativo",
     className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
@@ -47,26 +44,48 @@ export function LeadStatusBadge({ status }: { status: LeadStatus }) {
   );
 }
 
+function TableSkeleton() {
+  return (
+    <div className="divide-y divide-border">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="flex items-center gap-4 px-4 py-3">
+          <div className="flex flex-1 flex-col gap-1.5">
+            <Skeleton className="h-4 w-36" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+          <Skeleton className="hidden h-4 w-28 md:block" />
+          <Skeleton className="hidden h-4 w-40 lg:block" />
+          <Skeleton className="h-5 w-14 rounded-full" />
+          <Skeleton className="hidden h-4 w-20 sm:block" />
+          <Skeleton className="h-7 w-16 rounded-md" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 interface LeadListProps {
   leads: Lead[];
+  loading: boolean;
+  search: string;
+  statusFilter: string;
+  onSearchChange: (v: string) => void;
+  onStatusChange: (v: string) => void;
   onEdit: (lead: Lead) => void;
   onDelete: (id: string) => void;
 }
 
-export function LeadList({ leads, onEdit, onDelete }: LeadListProps) {
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("todos");
-
-  const filtered = leads.filter((lead) => {
-    const q = search.toLowerCase();
-    const matchesSearch =
-      lead.name.toLowerCase().includes(q) ||
-      (lead.company ?? "").toLowerCase().includes(q) ||
-      lead.email.toLowerCase().includes(q);
-    const matchesStatus =
-      statusFilter === "todos" || lead.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+export function LeadList({
+  leads,
+  loading,
+  search,
+  statusFilter,
+  onSearchChange,
+  onStatusChange,
+  onEdit,
+  onDelete,
+}: LeadListProps) {
+  const hasFilters = search.trim() !== "" || statusFilter !== "todos";
 
   return (
     <div className="flex flex-col gap-4">
@@ -75,13 +94,13 @@ export function LeadList({ leads, onEdit, onDelete }: LeadListProps) {
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nome, empresa ou e-mail..."
+            placeholder="Buscar por nome, empresa ou e-mail…"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => onSearchChange(e.target.value)}
             className="pl-8"
           />
         </div>
-        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? "todos")}>
+        <Select value={statusFilter} onValueChange={(v) => onStatusChange(v ?? "todos")}>
           <SelectTrigger className="w-full sm:w-36">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
@@ -96,13 +115,15 @@ export function LeadList({ leads, onEdit, onDelete }: LeadListProps) {
 
       {/* Table */}
       <div className="rounded-lg border border-border bg-card">
-        {filtered.length === 0 ? (
+        {loading ? (
+          <TableSkeleton />
+        ) : leads.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 py-16">
             <Users className="h-10 w-10 text-muted-foreground/40" />
             <p className="text-sm text-muted-foreground">
-              {leads.length === 0
-                ? "Nenhum lead cadastrado ainda."
-                : "Nenhum lead encontrado com esses filtros."}
+              {hasFilters
+                ? "Nenhum lead encontrado com esses filtros."
+                : "Nenhum lead cadastrado ainda."}
             </p>
           </div>
         ) : (
@@ -110,31 +131,21 @@ export function LeadList({ leads, onEdit, onDelete }: LeadListProps) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">
-                    Nome
-                  </th>
-                  <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground md:table-cell">
-                    Empresa
-                  </th>
-                  <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground lg:table-cell">
-                    E-mail
-                  </th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">
-                    Status
-                  </th>
-                  <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground sm:table-cell">
-                    Criado em
-                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Nome</th>
+                  <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground md:table-cell">Empresa</th>
+                  <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground lg:table-cell">E-mail</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
+                  <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground sm:table-cell">Criado em</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((lead, idx) => (
+                {leads.map((lead, idx) => (
                   <tr
                     key={lead.id}
                     className={cn(
                       "transition-colors hover:bg-muted/40",
-                      idx !== filtered.length - 1 && "border-b border-border"
+                      idx !== leads.length - 1 && "border-b border-border"
                     )}
                   >
                     <td className="px-4 py-3">
@@ -146,9 +157,7 @@ export function LeadList({ leads, onEdit, onDelete }: LeadListProps) {
                           {lead.name}
                         </Link>
                         {lead.role && (
-                          <span className="text-xs text-muted-foreground">
-                            {lead.role}
-                          </span>
+                          <span className="text-xs text-muted-foreground">{lead.role}</span>
                         )}
                       </div>
                     </td>
@@ -193,10 +202,10 @@ export function LeadList({ leads, onEdit, onDelete }: LeadListProps) {
         )}
       </div>
 
-      {filtered.length > 0 && (
+      {!loading && leads.length > 0 && (
         <p className="text-xs text-muted-foreground">
-          {filtered.length} lead{filtered.length !== 1 ? "s" : ""} encontrado
-          {filtered.length !== 1 ? "s" : ""}
+          {leads.length} lead{leads.length !== 1 ? "s" : ""} encontrado
+          {leads.length !== 1 ? "s" : ""}
         </p>
       )}
     </div>

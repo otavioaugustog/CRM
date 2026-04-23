@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import type { Lead } from "@/types";
-import { MOCK_LEADS } from "@/lib/mock-data";
+import { fetchLeads, createLead, updateLead, deleteLead } from "@/app/actions/leads";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,10 +25,36 @@ import { LeadForm } from "@/components/leads/lead-form";
 import { LeadList } from "@/components/leads/lead-list";
 
 export default function LeadsPage() {
-  const [leads, setLeads] = useState<Lead[]>(MOCK_LEADS);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("todos");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const loadLeads = useCallback(async (q: string, status: string) => {
+    setLoading(true);
+    const data = await fetchLeads(q || undefined, status);
+    setLeads(data);
+    setLoading(false);
+  }, []);
+
+  // Initial load
+  useEffect(() => {
+    loadLeads("", "todos");
+  }, [loadLeads]);
+
+  // Debounced reload on filter change
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => loadLeads(search, statusFilter), 350);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [search, statusFilter, loadLeads]);
 
   function handleOpenNew() {
     setEditingLead(null);
@@ -40,19 +66,30 @@ export default function LeadsPage() {
     setSheetOpen(true);
   }
 
-  function handleSave(lead: Lead) {
+  async function handleSave(data: {
+    name: string; email: string; phone?: string;
+    company?: string; role?: string; status: "ativo" | "inativo" | "perdido";
+  }) {
     if (editingLead) {
-      setLeads((prev) => prev.map((l) => (l.id === lead.id ? lead : l)));
+      const res = await updateLead(editingLead.id, data);
+      if (res.error) { toast.error(res.error); return; }
+      setLeads((prev) => prev.map((l) => (l.id === editingLead.id ? res.lead! : l)));
       toast.success("Lead atualizado com sucesso.");
     } else {
-      setLeads((prev) => [lead, ...prev]);
+      const res = await createLead(data);
+      if (res.error) { toast.error(res.error); return; }
+      setLeads((prev) => [res.lead!, ...prev]);
       toast.success("Lead criado com sucesso.");
     }
     setSheetOpen(false);
   }
 
-  function handleConfirmDelete() {
+  async function handleConfirmDelete() {
     if (!deleteId) return;
+    setDeleting(true);
+    const res = await deleteLead(deleteId);
+    setDeleting(false);
+    if (res.error) { toast.error(res.error); return; }
     setLeads((prev) => prev.filter((l) => l.id !== deleteId));
     setDeleteId(null);
     toast.success("Lead excluído.");
@@ -78,6 +115,11 @@ export default function LeadsPage() {
 
         <LeadList
           leads={leads}
+          loading={loading}
+          search={search}
+          statusFilter={statusFilter}
+          onSearchChange={setSearch}
+          onStatusChange={setStatusFilter}
           onEdit={handleOpenEdit}
           onDelete={setDeleteId}
         />
@@ -119,14 +161,15 @@ export default function LeadsPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteId(null)}>
+            <Button variant="outline" onClick={() => setDeleteId(null)} disabled={deleting}>
               Cancelar
             </Button>
             <Button
               variant="destructive"
               onClick={handleConfirmDelete}
+              disabled={deleting}
             >
-              Excluir
+              {deleting ? "Excluindo…" : "Excluir"}
             </Button>
           </DialogFooter>
         </DialogContent>

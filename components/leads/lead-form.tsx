@@ -28,7 +28,7 @@ type LeadFormData = z.infer<typeof schema>;
 
 interface LeadFormProps {
   lead?: Lead;
-  onSuccess: (lead: Lead) => void;
+  onSuccess: (data: LeadFormData) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -37,7 +37,7 @@ export function LeadForm({ lead, onSuccess, onCancel }: LeadFormProps) {
     register,
     control,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<LeadFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -50,21 +50,9 @@ export function LeadForm({ lead, onSuccess, onCancel }: LeadFormProps) {
     },
   });
 
-  function onSubmit(data: LeadFormData) {
-    const now = new Date().toISOString();
-    onSuccess({
-      id: lead?.id ?? `lead-${Date.now()}`,
-      workspace_id: lead?.workspace_id ?? "ws-1",
-      owner_id: lead?.owner_id ?? "user-1",
-      created_at: lead?.created_at ?? now,
-      updated_at: now,
-      ...data,
-    });
-  }
-
   return (
     <form
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={handleSubmit(onSuccess)}
       className="flex flex-1 flex-col overflow-hidden"
     >
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-2">
@@ -97,29 +85,17 @@ export function LeadForm({ lead, onSuccess, onCancel }: LeadFormProps) {
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="phone">Telefone</Label>
-          <Input
-            id="phone"
-            placeholder="(11) 99999-9999"
-            {...register("phone")}
-          />
+          <Input id="phone" placeholder="(11) 99999-9999" {...register("phone")} />
         </div>
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="company">Empresa</Label>
-          <Input
-            id="company"
-            placeholder="Nome da empresa"
-            {...register("company")}
-          />
+          <Input id="company" placeholder="Nome da empresa" {...register("company")} />
         </div>
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="role">Cargo</Label>
-          <Input
-            id="role"
-            placeholder="Ex: Diretor de Vendas"
-            {...register("role")}
-          />
+          <Input id="role" placeholder="Ex: Diretor de Vendas" {...register("role")} />
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -128,10 +104,7 @@ export function LeadForm({ lead, onSuccess, onCancel }: LeadFormProps) {
             control={control}
             name="status"
             render={({ field }) => (
-              <Select
-                value={field.value}
-                onValueChange={(value) => field.onChange(value)}
-              >
+              <Select value={field.value} onValueChange={(v) => field.onChange(v)}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione o status" />
                 </SelectTrigger>
@@ -152,11 +125,14 @@ export function LeadForm({ lead, onSuccess, onCancel }: LeadFormProps) {
           variant="outline"
           className="flex-1"
           onClick={onCancel}
+          disabled={isSubmitting}
         >
           Cancelar
         </Button>
-        <Button type="submit" className="flex-1">
-          {lead ? "Salvar alterações" : "Criar lead"}
+        <Button type="submit" className="flex-1" disabled={isSubmitting}>
+          {isSubmitting
+            ? lead ? "Salvando…" : "Criando…"
+            : lead ? "Salvar alterações" : "Criar lead"}
         </Button>
       </div>
     </form>

@@ -8,7 +8,7 @@ interface MetricCardProps {
   icon: LucideIcon;
   iconColor: string;
   iconBg: string;
-  change: number;
+  change?: number;
   changeLabel?: string;
 }
 
@@ -21,7 +21,7 @@ export function MetricCard({
   change,
   changeLabel = "vs mês passado",
 }: MetricCardProps) {
-  const positive = change >= 0;
+  const positive = (change ?? 0) >= 0;
 
   return (
     <Card>
@@ -35,23 +35,25 @@ export function MetricCard({
       </CardHeader>
       <CardContent>
         <p className="text-2xl font-bold">{value}</p>
-        <div className="mt-1 flex items-center gap-1">
-          {positive ? (
-            <TrendingUp className="h-3 w-3 text-emerald-500" />
-          ) : (
-            <TrendingDown className="h-3 w-3 text-rose-500" />
-          )}
-          <span
-            className={cn(
-              "text-xs font-medium",
-              positive ? "text-emerald-500" : "text-rose-500"
+        {change !== undefined && (
+          <div className="mt-1 flex items-center gap-1">
+            {positive ? (
+              <TrendingUp className="h-3 w-3 text-emerald-500" />
+            ) : (
+              <TrendingDown className="h-3 w-3 text-rose-500" />
             )}
-          >
-            {positive ? "+" : ""}
-            {change}%
-          </span>
-          <span className="text-xs text-muted-foreground">{changeLabel}</span>
-        </div>
+            <span
+              className={cn(
+                "text-xs font-medium",
+                positive ? "text-emerald-500" : "text-rose-500"
+              )}
+            >
+              {positive ? "+" : ""}
+              {change}%
+            </span>
+            <span className="text-xs text-muted-foreground">{changeLabel}</span>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

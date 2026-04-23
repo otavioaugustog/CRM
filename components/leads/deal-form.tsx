@@ -22,9 +22,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { STAGE_LABELS } from "@/components/kanban/kanban-column";
-import type { Deal, DealStage, Lead } from "@/types";
+import type { DealStage, Lead } from "@/types";
 
-// All fields stay as strings; we coerce value manually in onSubmit
 const schema = z.object({
   title: z.string().min(2, "Título deve ter ao menos 2 caracteres"),
   value: z.string().refine((v) => !isNaN(parseFloat(v)) && parseFloat(v) >= 0, {
@@ -41,7 +40,7 @@ interface DealFormProps {
   leads: Lead[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess: (deal: Deal) => void;
+  onSuccess: (data: { title: string; lead_id: string; value: number; due_date?: string }) => Promise<void>;
 }
 
 export function DealForm({ stage, leads, open, onOpenChange, onSuccess }: DealFormProps) {
@@ -54,34 +53,19 @@ export function DealForm({ stage, leads, open, onOpenChange, onSuccess }: DealFo
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      title: "",
-      value: "0",
-      lead_id: "",
-      due_date: "",
-    },
+    defaultValues: { title: "", value: "0", lead_id: "", due_date: "" },
   });
 
   const leadId = watch("lead_id");
 
-  function onSubmit(data: FormValues) {
-    const now = new Date().toISOString();
-    const newDeal: Deal = {
-      id: `deal-${Date.now()}`,
-      workspace_id: "ws-1",
+  async function onSubmit(data: FormValues) {
+    await onSuccess({
       title: data.title,
       lead_id: data.lead_id,
-      stage,
       value: parseFloat(data.value),
-      owner_id: "user-1",
       due_date: data.due_date || undefined,
-      created_at: now,
-      updated_at: now,
-    };
-
-    onSuccess(newDeal);
+    });
     reset();
-    onOpenChange(false);
   }
 
   function handleOpenChange(nextOpen: boolean) {
@@ -105,13 +89,11 @@ export function DealForm({ stage, leads, open, onOpenChange, onSuccess }: DealFo
           onSubmit={handleSubmit(onSubmit)}
           className="flex flex-col gap-5 px-6 py-5 flex-1 overflow-y-auto"
         >
-          {/* Etapa (informativo) */}
           <div className="flex flex-col gap-1.5">
             <Label className="text-xs text-muted-foreground">Etapa</Label>
             <p className="text-sm font-medium text-foreground">{STAGE_LABELS[stage]}</p>
           </div>
 
-          {/* Título */}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="deal-title">Título do negócio</Label>
             <Input
@@ -125,7 +107,6 @@ export function DealForm({ stage, leads, open, onOpenChange, onSuccess }: DealFo
             )}
           </div>
 
-          {/* Valor */}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="deal-value">Valor (R$)</Label>
             <Input
@@ -142,18 +123,13 @@ export function DealForm({ stage, leads, open, onOpenChange, onSuccess }: DealFo
             )}
           </div>
 
-          {/* Lead */}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="deal-lead">Lead</Label>
             <Select
               value={leadId}
               onValueChange={(val) => setValue("lead_id", val ?? "", { shouldValidate: true })}
             >
-              <SelectTrigger
-                id="deal-lead"
-                className="w-full"
-                aria-invalid={!!errors.lead_id}
-              >
+              <SelectTrigger id="deal-lead" className="w-full" aria-invalid={!!errors.lead_id}>
                 <SelectValue placeholder="Selecione um lead" />
               </SelectTrigger>
               <SelectContent>
@@ -172,14 +148,9 @@ export function DealForm({ stage, leads, open, onOpenChange, onSuccess }: DealFo
             )}
           </div>
 
-          {/* Prazo */}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="deal-due-date">Prazo</Label>
-            <Input
-              id="deal-due-date"
-              type="date"
-              {...register("due_date")}
-            />
+            <Input id="deal-due-date" type="date" {...register("due_date")} />
           </div>
         </form>
 
@@ -189,16 +160,12 @@ export function DealForm({ stage, leads, open, onOpenChange, onSuccess }: DealFo
             variant="outline"
             className="flex-1"
             onClick={() => handleOpenChange(false)}
+            disabled={isSubmitting}
           >
             Cancelar
           </Button>
-          <Button
-            type="submit"
-            form="deal-form"
-            className="flex-1"
-            disabled={isSubmitting}
-          >
-            Criar negócio
+          <Button type="submit" form="deal-form" className="flex-1" disabled={isSubmitting}>
+            {isSubmitting ? "Criando…" : "Criar negócio"}
           </Button>
         </SheetFooter>
       </SheetContent>
