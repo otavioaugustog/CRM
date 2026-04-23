@@ -10,7 +10,7 @@
 |---|---|---|---|
 | 1 | Setup & Fundação ✅ | `feat/setup` | Projeto, design system, layout shell |
 | 2 | Auth — UI ✅ | `feat/auth-ui` | Telas de login/signup com dados mock |
-| 3 | Auth — Backend | `feat/auth-backend` | Supabase Auth + middleware + sessão real |
+| 3 | Auth — Backend 🔄 | `feat/auth-backend` | Supabase Auth + middleware + sessão real |
 | 4 | Leads — UI ✅ | `feat/leads-ui` | Listagem, formulário e detalhe com mock |
 | 5 | Leads — Backend | `feat/leads-backend` | CRUD real + RLS + filtros no banco |
 | 6 | Kanban — UI ✅ | `feat/kanban-ui` | Board drag-and-drop com dados mock |
@@ -81,16 +81,16 @@ feat: telas de auth (login, signup, forgot-password) com validação Zod
 
 ---
 
-## M3 — Auth — Backend
+## M3 — Auth — Backend 🔄
 
 **Branch:** `feat/auth-backend`
 **Objetivo:** Conectar formulários de auth ao Supabase Auth. Sessão persistente, middleware de proteção de rotas, redirect automático.
 
 ### Entregas
 
-- [ ] Instalar `@supabase/ssr` e `@supabase/supabase-js`
-- [ ] Criar `lib/supabase/client.ts` (`createBrowserClient`)
-- [ ] Criar `lib/supabase/server.ts` (`createServerClient` com cookies)
+- [x] Instalar `@supabase/ssr` e `@supabase/supabase-js` *(feat/supabase-core — PR #3)*
+- [x] Criar `lib/supabase/client.ts` (`createBrowserClient`) *(feat/supabase-core — PR #3)*
+- [x] Criar `lib/supabase/server.ts` (`createServerClient` com cookies) *(feat/supabase-core — PR #3)*
 - [ ] Criar `middleware.ts` com proteção de `/dashboard` e redirect para `/login`
 - [ ] Conectar form de signup → `supabase.auth.signUp()`
 - [ ] Conectar form de login → `supabase.auth.signInWithPassword()`
