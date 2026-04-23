@@ -15,9 +15,10 @@ CREATE TABLE IF NOT EXISTS public.invitations (
                               CHECK (role IN ('admin', 'member')),
   expires_at    TIMESTAMPTZ NOT NULL DEFAULT (now() + INTERVAL '7 days'),
   accepted_at   TIMESTAMPTZ,
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-  -- Impede convites duplicados pendentes para o mesmo e-mail no workspace
-  UNIQUE (workspace_id, email)
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+  -- Nota: unique constraint de (workspace_id, email) é criada como
+  -- partial index em idx_invitations_unique_pending (apenas pendentes),
+  -- permitindo reenvio após aceitação ou expiração.
 );
 
 -- ─── ÍNDICES ────────────────────────────────────────────────
@@ -29,6 +30,12 @@ CREATE INDEX IF NOT EXISTS idx_invitations_token
 -- Lookup de convites por e-mail (autenticação pós-cadastro)
 CREATE INDEX IF NOT EXISTS idx_invitations_email
   ON public.invitations(email);
+
+-- Impede convites duplicados apenas para pendentes
+-- (permite reenvio após aceitação ou expiração)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_invitations_unique_pending
+  ON public.invitations(workspace_id, email)
+  WHERE accepted_at IS NULL;
 
 -- ─── RLS ────────────────────────────────────────────────────
 
@@ -88,7 +95,12 @@ DECLARE
   v_invitation  public.invitations%ROWTYPE;
   v_user_email  TEXT;
 BEGIN
-  -- Busca e valida o convite
+  -- Rejeita chamadas sem sessão autenticada
+  IF auth.uid() IS NULL THEN
+    RETURN json_build_object('error', 'Autenticação necessária');
+  END IF;
+
+  -- Busca e valida o convite pelo token
   SELECT * INTO v_invitation
   FROM public.invitations
   WHERE token = p_token
@@ -105,7 +117,7 @@ BEGIN
   WHERE id = auth.uid();
 
   IF v_user_email IS DISTINCT FROM v_invitation.email THEN
-    RETURN json_build_object('error', 'Este convite pertence a outro e-mail');
+    RETURN json_build_object('error', 'Este convite não pertence à sua conta');
   END IF;
 
   -- Cria a associação (ou ignora se já existir)
@@ -113,7 +125,7 @@ BEGIN
   VALUES (v_invitation.workspace_id, auth.uid(), v_invitation.role)
   ON CONFLICT (workspace_id, user_id) DO NOTHING;
 
-  -- Marca como aceito
+  -- Marca como aceito atomicamente
   UPDATE public.invitations
   SET accepted_at = now()
   WHERE id = v_invitation.id;

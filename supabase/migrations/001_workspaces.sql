@@ -107,23 +107,35 @@ CREATE POLICY "workspace_members_select"
   ON public.workspace_members FOR SELECT
   USING (workspace_id IN (SELECT public.get_user_workspace_ids()));
 
--- workspace_members: admin adiciona membros; criador adiciona a si mesmo
--- (sem membros ainda = inserção do próprio criador como primeiro admin)
+-- workspace_members: apenas admins inserem membros diretamente.
+-- O criador do workspace é inserido como admin via trigger
+-- trg_new_workspace_creator (SECURITY DEFINER), garantindo atomicidade.
+-- ATENÇÃO: não usar bootstrap NOT EXISTS aqui — rodaria sob RLS e
+-- permitiria que qualquer usuário se auto-inserisse em workspaces alheios.
 CREATE POLICY "workspace_members_insert"
   ON public.workspace_members FOR INSERT
   WITH CHECK (
-    -- Caso normal: admin convida
     workspace_id IN (
       SELECT workspace_id FROM public.workspace_members
       WHERE user_id = auth.uid() AND role = 'admin'
     )
-    OR
-    -- Bootstrap: primeiro membro do workspace (criação)
-    NOT EXISTS (
-      SELECT 1 FROM public.workspace_members wm
-      WHERE wm.workspace_id = workspace_members.workspace_id
-    )
   );
+
+-- Trigger: insere o criador do workspace como admin atomicamente
+CREATE OR REPLACE FUNCTION public.handle_new_workspace()
+RETURNS TRIGGER
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public AS $$
+BEGIN
+  INSERT INTO public.workspace_members (workspace_id, user_id, role)
+  VALUES (NEW.id, auth.uid(), 'admin');
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_new_workspace_creator
+  AFTER INSERT ON public.workspaces
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_workspace();
 
 -- workspace_members: admin pode alterar papel de membros
 CREATE POLICY "workspace_members_update"
