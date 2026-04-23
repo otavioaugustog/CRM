@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Menu, Bell } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -11,7 +12,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MOCK_USER } from "@/lib/mock-data";
+import { createClient } from "@/lib/supabase/client";
+import { signOut } from "@/app/actions/auth";
+import { getInitials } from "@/lib/utils";
+import type { User } from "@supabase/supabase-js";
 
 const PAGE_TITLES: Record<string, string> = {
   "/dashboard": "Dashboard",
@@ -23,7 +27,6 @@ const PAGE_TITLES: Record<string, string> = {
 
 function usePageTitle() {
   const pathname = usePathname();
-  // Sort longest path first so /settings/billing matches before /settings
   const sorted = Object.entries(PAGE_TITLES).sort((a, b) => b[0].length - a[0].length);
   for (const [path, title] of sorted) {
     if (pathname.startsWith(path)) return title;
@@ -37,11 +40,20 @@ interface HeaderProps {
 
 export function Header({ onMenuClick }: HeaderProps) {
   const title = usePageTitle();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+  }, []);
+
+  const displayName: string = user?.user_metadata?.name ?? user?.email ?? "";
+  const initials = displayName ? getInitials(displayName) : "?";
+  const firstName = displayName.split(" ")[0] || "";
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-border bg-card px-4">
       <div className="flex items-center gap-3">
-        {/* Hamburger — só aparece no mobile */}
         <Button
           variant="ghost"
           size="icon"
@@ -64,23 +76,32 @@ export function Header({ onMenuClick }: HeaderProps) {
           <DropdownMenuTrigger className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-secondary focus-visible:outline-none">
             <Avatar className="h-7 w-7">
               <AvatarFallback className="bg-primary text-primary-foreground text-xs font-bold">
-                {MOCK_USER.avatarInitials}
+                {initials}
               </AvatarFallback>
             </Avatar>
-            <span className="hidden text-sm font-medium text-foreground sm:block">
-              {MOCK_USER.name.split(" ")[0]}
-            </span>
+            {firstName && (
+              <span className="hidden text-sm font-medium text-foreground sm:block">
+                {firstName}
+              </span>
+            )}
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             <div className="px-2 py-1.5">
-              <p className="text-sm font-medium text-foreground">{MOCK_USER.name}</p>
-              <p className="text-xs text-muted-foreground">{MOCK_USER.email}</p>
+              {displayName && (
+                <p className="text-sm font-medium text-foreground">{displayName}</p>
+              )}
+              {user?.email && (
+                <p className="text-xs text-muted-foreground">{user.email}</p>
+              )}
             </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem>Perfil</DropdownMenuItem>
             <DropdownMenuItem>Configurações</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive focus:text-destructive">
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={() => signOut()}
+            >
               Sair
             </DropdownMenuItem>
           </DropdownMenuContent>

@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { createClient } from "@/lib/supabase/client";
 
 const schema = z.object({
   email: z.string().email("E-mail inválido"),
@@ -21,6 +22,7 @@ type FormData = z.infer<typeof schema>;
 export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const {
     register,
@@ -28,10 +30,24 @@ export default function LoginPage() {
     formState: { errors },
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
-  async function onSubmit(_data: FormData) {
+  async function onSubmit(data: FormData) {
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
+    setAuthError(null);
+
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithPassword({
+      email: data.email,
+      password: data.password,
+    });
+
+    if (error) {
+      setAuthError("E-mail ou senha incorretos.");
+      setLoading(false);
+      return;
+    }
+
     router.push("/dashboard");
+    router.refresh();
   }
 
   return (
@@ -82,11 +98,13 @@ export default function LoginPage() {
           )}
         </div>
 
-        <Button
-          type="submit"
-          disabled={loading}
-          className="w-full h-9 mt-2"
-        >
+        {authError && (
+          <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {authError}
+          </p>
+        )}
+
+        <Button type="submit" disabled={loading} className="w-full h-9 mt-2">
           {loading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />

@@ -4,11 +4,11 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useRouter } from "next/navigation";
 import { Loader2, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { createWorkspace } from "@/app/actions/workspace";
 
 const schema = z.object({
   workspaceName: z
@@ -20,8 +20,8 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export default function OnboardingPage() {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
 
   const {
     register,
@@ -29,10 +29,17 @@ export default function OnboardingPage() {
     formState: { errors },
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
-  async function onSubmit(_data: FormData) {
+  async function onSubmit(data: FormData) {
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-    router.push("/dashboard");
+    setServerError(null);
+
+    const result = await createWorkspace(data.workspaceName);
+
+    if (result?.error) {
+      setServerError(result.error);
+      setLoading(false);
+    }
+    // em sucesso: createWorkspace chama redirect('/dashboard') no servidor
   }
 
   return (
@@ -71,11 +78,13 @@ export default function OnboardingPage() {
           </p>
         </div>
 
-        <Button
-          type="submit"
-          disabled={loading}
-          className="w-full h-9 mt-2"
-        >
+        {serverError && (
+          <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {serverError}
+          </p>
+        )}
+
+        <Button type="submit" disabled={loading} className="w-full h-9 mt-2">
           {loading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
