@@ -8,21 +8,21 @@
 
 | # | Milestone | Branch | Foco |
 |---|---|---|---|
-| 1 | Setup & Fundação | `feat/setup` | Projeto, design system, layout shell |
-| 2 | Auth — UI | `feat/auth-ui` | Telas de login/signup com dados mock |
+| 1 | Setup & Fundação ✅ | `feat/setup` | Projeto, design system, layout shell |
+| 2 | Auth — UI ✅ | `feat/auth-ui` | Telas de login/signup com dados mock |
 | 3 | Auth — Backend | `feat/auth-backend` | Supabase Auth + middleware + sessão real |
-| 4 | Leads — UI | `feat/leads-ui` | Listagem, formulário e detalhe com mock |
+| 4 | Leads — UI ✅ | `feat/leads-ui` | Listagem, formulário e detalhe com mock |
 | 5 | Leads — Backend | `feat/leads-backend` | CRUD real + RLS + filtros no banco |
-| 6 | Kanban — UI | `feat/kanban-ui` | Board drag-and-drop com dados mock |
+| 6 | Kanban — UI ✅ | `feat/kanban-ui` | Board drag-and-drop com dados mock |
 | 7 | Kanban — Backend | `feat/kanban-backend` | Deals reais + persistência de stage |
 | 8 | Atividades — UI | `feat/activities-ui` | Timeline e formulário de atividade mock |
 | 9 | Atividades — Backend | `feat/activities-backend` | CRUD de atividades + RLS |
-| 10 | Dashboard — UI | `feat/dashboard-ui` | Cards de métricas e gráfico com mock |
+| 10 | Dashboard — UI ✅ | `feat/dashboard-ui` | Cards de métricas e gráfico com mock |
 | 11 | Dashboard — Backend | `feat/dashboard-backend` | Queries reais de agregação |
 | 12 | Workspace — UI | `feat/workspace-ui` | Switcher, settings e convite mock |
 | 13 | Workspace — Backend | `feat/workspace-backend` | Multi-workspace real + Resend + RLS |
 | 14 | Monetização | `feat/monetization` | Stripe Checkout + webhook + planos |
-| 15 | Landing Page | `feat/landing-page` | Página pública de apresentação |
+| 15 | Landing Page ✅ | `feat/landing-page` | Página pública de apresentação |
 | 16 | Polish & Deploy | `chore/deploy` | Responsividade, SEO, Vercel + Supabase Cloud |
 
 ---
@@ -57,22 +57,22 @@ feat: setup inicial — Next.js 14, shadcn/ui, design tokens e layout shell
 
 ---
 
-## M2 — Auth — UI
+## M2 — Auth — UI ✅
 
-**Branch:** `feat/auth-ui`
+**Branch:** `feat/auth-ui` → merged em `main`
 **Objetivo:** Telas de login, cadastro e recuperação de senha com formulários validados, sem conexão com Supabase ainda.
 
 ### Entregas
 
-- [ ] Criar `app/(auth)/login/page.tsx` com form e-mail + senha
-- [ ] Criar `app/(auth)/signup/page.tsx` com form nome + e-mail + senha + confirmação
-- [ ] Criar `app/(auth)/forgot-password/page.tsx` com form e-mail
-- [ ] Validação dos formulários com React Hook Form + Zod
-- [ ] Feedback visual: loading state no botão, mensagens de erro inline
-- [ ] Redirecionar para `/` (dashboard) ao submeter (mock — sem auth real)
-- [ ] Layout da área de auth: logo PipeFlow, card centralizado, fundo slate-50
-- [ ] Link "Já tem conta? Entrar" / "Não tem conta? Cadastre-se" entre páginas
-- [ ] Responsivo: funcional em mobile e desktop
+- [x] Criar `app/(auth)/login/page.tsx` com form e-mail + senha
+- [x] Criar `app/(auth)/signup/page.tsx` com form nome + e-mail + senha + confirmação
+- [x] Criar `app/(auth)/forgot-password/page.tsx` com form e-mail
+- [x] Validação dos formulários com React Hook Form + Zod
+- [x] Feedback visual: loading state no botão, mensagens de erro inline
+- [x] Redirecionar para `/` (dashboard) ao submeter (mock — sem auth real)
+- [x] Layout da área de auth: logo PipeFlow, card centralizado, fundo slate-50
+- [x] Link "Já tem conta? Entrar" / "Não tem conta? Cadastre-se" entre páginas
+- [x] Responsivo: funcional em mobile e desktop
 
 **Commit final:**
 ```
@@ -108,25 +108,25 @@ feat: auth backend — Supabase Auth, middleware de sessão e proteção de rota
 
 ---
 
-## M4 — Leads — UI
+## M4 — Leads — UI ✅
 
-**Branch:** `feat/leads-ui`
+**Branch:** `feat/leads-ui` → merged em `main`
 **Objetivo:** Listagem de leads com filtros, formulário de criação/edição e página de detalhe — tudo com dados mock estáticos.
 
 ### Entregas
 
-- [ ] Criar `app/(dashboard)/leads/page.tsx` com tabela de leads
-- [ ] Criar `components/leads/lead-list.tsx` com colunas: Nome, Empresa, E-mail, Status, Responsável, Data
-- [ ] Filtros na listagem: por status (dropdown), busca por nome/empresa (input)
-- [ ] Botão "Novo Lead" abre `Sheet` (shadcn) com `LeadForm`
-- [ ] Criar `components/leads/lead-form.tsx` com campos: nome, e-mail, telefone, empresa, cargo, status
-- [ ] Validação do form com Zod + React Hook Form
-- [ ] Criar `app/(dashboard)/leads/[id]/page.tsx` com perfil do lead
-- [ ] Seção de perfil: avatar com iniciais, nome, empresa, cargo, e-mail, telefone, status badge
-- [ ] Placeholder de timeline de atividades (sem dados ainda — "Nenhuma atividade registrada")
-- [ ] Navegação: clicar em lead na listagem vai para detalhe; botão "Voltar"
-- [ ] Dados mock: array de 5–10 leads hardcoded para visualização
-- [ ] Badge de status com cores: Ativo (emerald), Inativo (slate), Perdido (rose)
+- [x] Criar `app/(dashboard)/leads/page.tsx` com tabela de leads
+- [x] Criar `components/leads/lead-list.tsx` com colunas: Nome, Empresa, E-mail, Status, Responsável, Data
+- [x] Filtros na listagem: por status (dropdown), busca por nome/empresa (input)
+- [x] Botão "Novo Lead" abre `Sheet` (shadcn) com `LeadForm`
+- [x] Criar `components/leads/lead-form.tsx` com campos: nome, e-mail, telefone, empresa, cargo, status
+- [x] Validação do form com Zod + React Hook Form
+- [x] Criar `app/(dashboard)/leads/[id]/page.tsx` com perfil do lead
+- [x] Seção de perfil: avatar com iniciais, nome, empresa, cargo, e-mail, telefone, status badge
+- [x] Placeholder de timeline de atividades (sem dados ainda — "Nenhuma atividade registrada")
+- [x] Navegação: clicar em lead na listagem vai para detalhe; botão "Voltar"
+- [x] Dados mock: array de 5–10 leads hardcoded para visualização
+- [x] Badge de status com cores: Ativo (emerald), Inativo (slate), Perdido (rose)
 
 **Commit final:**
 ```
@@ -161,26 +161,26 @@ feat: leads backend — CRUD real, RLS por workspace, filtros e busca
 
 ---
 
-## M6 — Kanban — UI
+## M6 — Kanban — UI ✅
 
-**Branch:** `feat/kanban-ui`
+**Branch:** `feat/kanban-ui` → merged em `main`
 **Objetivo:** Board Kanban com drag-and-drop visual entre colunas usando dados mock.
 
 ### Entregas
 
-- [ ] Instalar `@dnd-kit/core` e `@dnd-kit/sortable`
-- [ ] Criar `app/(dashboard)/pipeline/page.tsx`
-- [ ] Criar `components/kanban/kanban-board.tsx` com `DndContext`
-- [ ] Criar `components/kanban/kanban-column.tsx` com `useDroppable` — 6 colunas fixas
-- [ ] Criar `components/kanban/kanban-card.tsx` com `useDraggable` — título, valor, lead, prazo
-- [ ] Criar `components/kanban/kanban-drag-overlay.tsx` — clone do card durante drag
-- [ ] Cores de header por coluna conforme design tokens (slate, blue, violet, amber, emerald, rose)
-- [ ] Scroll horizontal no board quando colunas excedem a tela
-- [ ] Contador de cards por coluna no header da coluna
-- [ ] Botão "+" em cada coluna abre `Sheet` com form de novo deal
-- [ ] Criar `components/leads/deal-form.tsx` com campos: título, valor (R$), lead vinculado, prazo
-- [ ] Dados mock: 8–10 deals distribuídos entre colunas
-- [ ] Drag funcional entre colunas (estado local, sem persistência ainda)
+- [x] Instalar `@dnd-kit/core` e `@dnd-kit/sortable`
+- [x] Criar `app/(dashboard)/pipeline/page.tsx`
+- [x] Criar `components/kanban/kanban-board.tsx` com `DndContext`
+- [x] Criar `components/kanban/kanban-column.tsx` com `useDroppable` — 6 colunas fixas
+- [x] Criar `components/kanban/kanban-card.tsx` com `useDraggable` — título, valor, lead, prazo
+- [x] Criar `components/kanban/kanban-drag-overlay.tsx` — clone do card durante drag
+- [x] Cores de header por coluna conforme design tokens (slate, blue, violet, amber, emerald, rose)
+- [x] Scroll horizontal no board quando colunas excedem a tela
+- [x] Contador de cards por coluna no header da coluna
+- [x] Botão "+" em cada coluna abre `Sheet` com form de novo deal
+- [x] Criar `components/leads/deal-form.tsx` com campos: título, valor (R$), lead vinculado, prazo
+- [x] Dados mock: 8–10 deals distribuídos entre colunas
+- [x] Drag funcional entre colunas (estado local, sem persistência ainda)
 
 **Commit final:**
 ```
@@ -260,21 +260,21 @@ feat: atividades backend — CRUD real com RLS e timeline conectada ao Supabase
 
 ---
 
-## M10 — Dashboard — UI
+## M10 — Dashboard — UI ✅
 
-**Branch:** `feat/dashboard-ui`
+**Branch:** `feat/dashboard-ui` → merged em `main`
 **Objetivo:** Dashboard com cards de métricas e gráfico de funil de vendas usando dados mock.
 
 ### Entregas
 
-- [ ] Criar `components/dashboard/metric-card.tsx` — card com título, valor, ícone e variação %
-- [ ] 4 cards na `app/(dashboard)/page.tsx`: Total de Leads, Negócios Abertos, Valor do Pipeline (R$), Taxa de Conversão
-- [ ] Instalar `recharts`
-- [ ] Criar `components/dashboard/funnel-chart.tsx` com `BarChart` horizontal mostrando volume por etapa
-- [ ] Seção "Meus Negócios com Prazo Próximo" — lista de até 5 deals com badge de urgência
-- [ ] Cores do gráfico alinhadas aos tokens das etapas do Kanban
-- [ ] Dados mock realistas: valores, percentuais e deals hardcoded
-- [ ] Layout responsivo: 2 colunas em desktop, 1 em mobile para os cards
+- [x] Criar `components/dashboard/metric-card.tsx` — card com título, valor, ícone e variação %
+- [x] 4 cards na `app/(dashboard)/page.tsx`: Total de Leads, Negócios Abertos, Valor do Pipeline (R$), Taxa de Conversão
+- [x] Instalar `recharts`
+- [x] Criar `components/dashboard/funnel-chart.tsx` com `BarChart` horizontal mostrando volume por etapa
+- [x] Seção "Meus Negócios com Prazo Próximo" — lista de até 5 deals com badge de urgência
+- [x] Cores do gráfico alinhadas aos tokens das etapas do Kanban
+- [x] Dados mock realistas: valores, percentuais e deals hardcoded
+- [x] Layout responsivo: 2 colunas em desktop, 1 em mobile para os cards
 
 **Commit final:**
 ```
@@ -385,23 +385,29 @@ feat: monetização — Stripe Checkout, webhook de planos e Customer Portal
 
 ---
 
-## M15 — Landing Page
+## M15 — Landing Page ✅
 
-**Branch:** `feat/landing-page`
+**Branch:** `feat/landing-page` → merged em `main`
 **Objetivo:** Página pública de apresentação do PipeFlow CRM com hero, features, pricing e CTA.
 
 ### Entregas
 
-- [ ] Criar `app/(public)/page.tsx` com layout próprio (sem sidebar)
-- [ ] Seção **Hero**: headline, subtítulo, CTA "Começar grátis" → `/signup`, imagem/screenshot do app
-- [ ] Seção **Funcionalidades**: 6 cards com ícone, título e descrição (Kanban, Leads, Dashboard, Multi-empresa, Atividades, Integração)
-- [ ] Seção **Planos/Preços**: comparação Free vs Pro com tabela de features e botões de CTA
-- [ ] Seção **CTA final**: banner de conversão com botão "Criar conta grátis"
-- [ ] Navbar pública: logo + links âncora + botão "Entrar" → `/login`
-- [ ] Footer: nome do produto, links legais placeholder
-- [ ] SEO: `metadata` com title, description e og:image na página
-- [ ] Responsivo: layout adaptado para mobile
-- [ ] Verificar que `/login` e `/signup` linkam corretamente a partir da landing
+- [x] Criar `app/(public)/page.tsx` com layout próprio (sem sidebar)
+- [x] Seção **Hero**: headline, subtítulo, CTA "Começar grátis" → `/signup`, imagem/screenshot do app
+- [x] Seção **Funcionalidades**: 6 cards com ícone, título e descrição (Kanban, Leads, Dashboard, Multi-empresa, Atividades, Integração)
+- [x] Seção **Planos/Preços**: comparação Free vs Pro com tabela de features e botões de CTA
+- [x] Seção **CTA final**: banner de conversão com botão "Criar conta grátis"
+- [x] Navbar pública: logo + links âncora + botão "Entrar" → `/login`
+- [x] Footer: nome do produto, links legais placeholder
+- [x] SEO: `metadata` com title, description e og:image na página
+- [x] Responsivo: layout adaptado para mobile
+- [x] Verificar que `/login` e `/signup` linkam corretamente a partir da landing
+
+**Extras entregues:**
+- Seção Stats com 4 métricas de impacto (+47% conversão, 3.2x leads, −62% ciclo, 1200+ times)
+- Dark mode completo via tokens CSS do design system
+- Dashboard movido de `/` → `/dashboard` para liberar a raiz para a landing
+- Redirects corrigidos em login, onboarding e header
 
 **Commit final:**
 ```
