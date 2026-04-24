@@ -127,7 +127,10 @@ export async function removeMember(membershipId: string): Promise<{ error?: stri
     .eq('id', membershipId)
     .eq('workspace_id', workspaceId)
 
-  if (error) return { error: 'Erro ao remover membro.' }
+  if (error) {
+    console.error('[removeMember] error:', error, { membershipId, workspaceId })
+    return { error: 'Erro ao remover membro.' }
+  }
   return {}
 }
 

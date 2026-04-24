@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +24,9 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+
+  const next = searchParams.get("next");
+  const isInvite = next?.startsWith("/invite/");
 
   const {
     register,
@@ -47,13 +50,24 @@ export default function LoginPage() {
       return;
     }
 
-    const next = searchParams.get("next");
     router.push(next && next.startsWith("/") ? next : "/dashboard");
     router.refresh();
   }
 
   return (
     <div className="rounded-xl border border-border bg-card p-8 shadow-sm">
+      {isInvite && (
+        <div className="mb-5 flex items-start gap-3 rounded-lg border border-primary/30 bg-primary/10 px-4 py-3">
+          <Mail className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+          <div>
+            <p className="text-sm font-medium text-foreground">Você recebeu um convite!</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Entre com sua conta ou cadastre-se para aceitar o convite e acessar o workspace.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-foreground">Entrar</h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -120,7 +134,10 @@ export default function LoginPage() {
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
         Não tem conta?{" "}
-        <Link href="/signup" className="font-medium text-primary hover:underline">
+        <Link
+          href={searchParams.get('next') ? `/signup?next=${encodeURIComponent(searchParams.get('next')!)}` : '/signup'}
+          className="font-medium text-primary hover:underline"
+        >
           Cadastre-se
         </Link>
       </p>

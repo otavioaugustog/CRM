@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getActiveWorkspaceId } from '@/lib/get-workspace-id'
 import { Resend } from 'resend'
+import { render } from '@react-email/render'
 import { InviteEmail } from '@/lib/resend/emails/invite-email'
 
 const MAX_FREE_MEMBERS = 2
@@ -100,20 +101,27 @@ export async function POST(req: NextRequest) {
 
   const resend = new Resend(process.env.RESEND_API_KEY)
 
+  const fromAddress = process.env.RESEND_FROM_EMAIL ?? 'onboarding@resend.dev'
+
+  const html = await render(InviteEmail({
+    workspaceName: workspace.name,
+    inviterName: user.user_metadata?.name ?? user.email ?? 'Alguém',
+    role,
+    inviteLink,
+  }))
+
   const { error: emailError } = await resend.emails.send({
-    from: 'PipeFlow CRM <noreply@pipeflow.app>',
+    from: `PipeFlow CRM <${fromAddress}>`,
     to: email,
     subject: `Você foi convidado para ${workspace.name} no PipeFlow`,
-    react: InviteEmail({
-      workspaceName: workspace.name,
-      inviterName: user.user_metadata?.name ?? user.email ?? 'Alguém',
-      role,
-      inviteLink,
-    }),
+    html,
   })
 
   if (emailError) {
-    // Convite foi criado — retorna aviso mas não falha criticamente
+    console.error('[invites] Resend error:', emailError)
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[invites] Link do convite (dev): ${inviteLink}`)
+    }
     return NextResponse.json({ warning: 'Convite criado, mas o e-mail não pôde ser enviado.' }, { status: 201 })
   }
 
