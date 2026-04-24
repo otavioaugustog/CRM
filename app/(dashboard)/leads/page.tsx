@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 import type { Lead } from "@/types";
 import { fetchLeads, fetchLeadLimitStatus, createLead, updateLead, deleteLead } from "@/app/actions/leads";
-import { FREE_LIMITS } from "@/lib/limits";
+import { FREE_LIMITS } from "@/lib/plan-config";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

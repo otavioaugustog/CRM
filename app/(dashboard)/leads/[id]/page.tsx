@@ -1,47 +1,11 @@
 import { notFound } from "next/navigation";
-import {
-  Phone,
-  Mail,
-  Building2,
-  Briefcase,
-  PhoneCall,
-  CalendarDays,
-  StickyNote,
-  AtSign,
-  ArrowLeft,
-} from "lucide-react";
+import { Phone, Mail, Building2, Briefcase, ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import type { ActivityType } from "@/types";
 import { fetchLeadById } from "@/app/actions/leads";
 import { fetchActivitiesByLead } from "@/app/actions/activities";
-import { cn, formatDate, formatRelativeDate, getInitials } from "@/lib/utils";
+import { formatDate, getInitials } from "@/lib/utils";
 import { LeadStatusBadge } from "@/components/leads/lead-list";
-
-const ACTIVITY_CONFIG: Record<
-  ActivityType,
-  { label: string; icon: React.ElementType; className: string }
-> = {
-  call: {
-    label: "Ligação",
-    icon: PhoneCall,
-    className: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400",
-  },
-  email: {
-    label: "E-mail",
-    icon: AtSign,
-    className: "bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400",
-  },
-  meeting: {
-    label: "Reunião",
-    icon: CalendarDays,
-    className: "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400",
-  },
-  note: {
-    label: "Nota",
-    icon: StickyNote,
-    className: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
-  },
-};
+import { LeadActivityTimeline } from "@/components/leads/lead-activity-timeline";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -63,7 +27,6 @@ export default async function LeadDetailPage({ params }: Props) {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Header */}
       <div className="flex items-center gap-3">
         <Link
           href="/leads"
@@ -147,62 +110,7 @@ export default async function LeadDetailPage({ params }: Props) {
 
         {/* Timeline de atividades */}
         <div className="flex flex-col gap-4 lg:col-span-2">
-          <div className="rounded-lg border border-border bg-card">
-            <div className="border-b border-border px-5 py-4">
-              <h3 className="font-medium text-foreground">
-                Atividades
-                {sortedActivities.length > 0 && (
-                  <span className="ml-2 text-sm font-normal text-muted-foreground">
-                    ({sortedActivities.length})
-                  </span>
-                )}
-              </h3>
-            </div>
-
-            {sortedActivities.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-2 py-12">
-                <StickyNote className="h-8 w-8 text-muted-foreground/40" />
-                <p className="text-sm text-muted-foreground">
-                  Nenhuma atividade registrada.
-                </p>
-              </div>
-            ) : (
-              <div className="divide-y divide-border">
-                {sortedActivities.map((activity, idx) => {
-                  const config = ACTIVITY_CONFIG[activity.type];
-                  const Icon = config.icon;
-                  return (
-                    <div
-                      key={activity.id}
-                      className={cn("flex gap-3 px-5 py-4", idx === 0 && "rounded-t-none")}
-                    >
-                      <div
-                        className={cn(
-                          "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full",
-                          config.className
-                        )}
-                      >
-                        <Icon className="h-3.5 w-3.5" />
-                      </div>
-                      <div className="flex flex-1 flex-col gap-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs font-medium text-foreground">
-                            {config.label}
-                          </span>
-                          <span className="shrink-0 text-xs text-muted-foreground">
-                            {formatRelativeDate(activity.created_at)}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground leading-relaxed">
-                          {activity.description}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          <LeadActivityTimeline leadId={id} initialActivities={sortedActivities} />
         </div>
       </div>
     </div>
