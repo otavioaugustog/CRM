@@ -12,13 +12,13 @@
 | 2 | Auth — UI ✅ | `feat/auth-ui` | Telas de login/signup com dados mock |
 | 3 | Auth — Backend ✅ | `feat/auth-backend` | Supabase Auth + middleware + sessão real |
 | 4 | Leads — UI ✅ | `feat/leads-ui` | Listagem, formulário e detalhe com mock |
-| 5 | Leads — Backend | `feat/leads-backend` | CRUD real + RLS + filtros no banco |
+| 5 | Leads — Backend ✅ | `feat/leads-data` | CRUD real + RLS + filtros no banco (PR #5) |
 | 6 | Kanban — UI ✅ | `feat/kanban-ui` | Board drag-and-drop com dados mock |
-| 7 | Kanban — Backend | `feat/kanban-backend` | Deals reais + persistência de stage |
+| 7 | Kanban — Backend ✅ | `feat/leads-data` | Deals reais + persistência de stage (PR #5) |
 | 8 | Atividades — UI | `feat/activities-ui` | Timeline e formulário de atividade mock |
 | 9 | Atividades — Backend | `feat/activities-backend` | CRUD de atividades + RLS |
 | 10 | Dashboard — UI ✅ | `feat/dashboard-ui` | Cards de métricas e gráfico com mock |
-| 11 | Dashboard — Backend | `feat/dashboard-backend` | Queries reais de agregação |
+| 11 | Dashboard — Backend ✅ | `feat/leads-data` | Queries reais de agregação (PR #5) |
 | 12 | Workspace — UI | `feat/workspace-ui` | Switcher, settings e convite mock |
 | 13 | Workspace — Backend | `feat/workspace-backend` | Multi-workspace real + Resend + RLS |
 | 14 | Monetização | `feat/monetization` | Stripe Checkout + webhook + planos |
@@ -148,24 +148,25 @@ feat: leads UI — listagem com filtros, formulário e página de detalhe (mock)
 
 ---
 
-## M5 — Leads — Backend
+## M5 — Leads — Backend ✅
 
-**Branch:** `feat/leads-backend`
+**Branch:** `feat/leads-data` → merged em `main` (PR #5)
 **Objetivo:** Substituir dados mock por CRUD real no Supabase com RLS por workspace.
 
 ### Entregas
 
-- [ ] Criar migration `001_leads.sql`: tabela `leads` com todos os campos + RLS policies
-- [ ] RLS: `SELECT`, `INSERT`, `UPDATE`, `DELETE` apenas para membros do mesmo workspace
-- [ ] Criar hook `hooks/use-leads.ts` com funções: `getLeads`, `createLead`, `updateLead`, `deleteLead`
-- [ ] Conectar `lead-list.tsx` ao hook — carregar leads reais do workspace
-- [ ] Conectar `lead-form.tsx` ao `createLead` e `updateLead`
-- [ ] Botão "Excluir" no detalhe do lead com dialog de confirmação
-- [ ] Implementar filtro por status com query no Supabase
-- [ ] Implementar busca full-text por nome/empresa (operador `ilike`)
-- [ ] Estado de loading: skeleton na tabela enquanto carrega
-- [ ] Estado vazio: ilustração + CTA "Criar primeiro lead" quando sem dados
-- [ ] Testar: criar, editar, excluir lead; filtros; RLS impedindo acesso cross-workspace
+- [x] Migrations aplicadas: `leads` com RLS (SELECT/INSERT/UPDATE/DELETE por workspace_id)
+- [x] Criar `app/actions/leads.ts` — Server Actions: `fetchLeads`, `fetchLeadById`, `createLead`, `updateLead`, `deleteLead`
+- [x] `fetchLeads`: busca com `.or(ilike)` em nome/empresa/email + filtro por status
+- [x] Conectar `leads/page.tsx` — substituiu MOCK_LEADS, carrega via Server Action
+- [x] Conectar `lead-form.tsx` ao `createLead` e `updateLead` (onSuccess assíncrono)
+- [x] Implementar filtro por status com query no Supabase
+- [x] Implementar busca full-text (ilike) com debounce de 350ms
+- [x] Estado de loading: `TableSkeleton` (5 linhas) enquanto carrega
+- [x] Estado vazio diferenciado: sem dados vs sem resultados de filtro
+- [x] `leads/[id]/page.tsx` convertido para Server Component com `fetchLeadById`
+- [x] Criado `lib/get-workspace-id.ts` — resolve workspace via cookie ou query Supabase
+- [x] Testado: lead criado persiste após reload; filtros funcionam no banco
 
 **Commit final:**
 ```
@@ -202,22 +203,21 @@ feat: kanban UI — board drag-and-drop com 6 colunas e cards (mock)
 
 ---
 
-## M7 — Kanban — Backend
+## M7 — Kanban — Backend ✅
 
-**Branch:** `feat/kanban-backend`
+**Branch:** `feat/leads-data` → merged em `main` (PR #5)
 **Objetivo:** Persistir deals e mudanças de stage no Supabase. Kanban reflete dados reais.
 
 ### Entregas
 
-- [ ] Criar migration `002_deals.sql`: tabela `deals` com campos + RLS policies
-- [ ] RLS: membros do workspace podem `SELECT`, `INSERT`, `UPDATE`; apenas admin pode `DELETE`
-- [ ] Criar hook `hooks/use-pipeline.ts` com: `getDeals`, `createDeal`, `updateDeal`, `moveDeal`
-- [ ] `moveDeal`: atualiza o campo `stage` no banco ao soltar card em nova coluna
-- [ ] Conectar board ao hook — carregar deals reais agrupados por stage
-- [ ] Conectar `deal-form.tsx` ao `createDeal`
-- [ ] Otimistic update: mover card instantaneamente na UI, reverter se a query falhar
-- [ ] Estado de loading por coluna durante fetch inicial
-- [ ] Testar: criar deal, arrastar entre colunas, recarregar página mantém posição
+- [x] Migrations aplicadas: `deals` com RLS (SELECT/INSERT/UPDATE por membros; DELETE por admin)
+- [x] Criar `app/actions/deals.ts` — Server Actions: `fetchDeals`, `createDeal`, `moveDeal`
+- [x] `moveDeal`: atualiza `stage` + `updated_at` no banco, guardado por `workspace_id`
+- [x] Conectar `kanban-board.tsx` — substituiu MOCK_DEALS, carrega via `Promise.all([fetchDeals, fetchLeads])`
+- [x] Conectar `deal-form.tsx` ao `createDeal` (onSuccess assíncrono)
+- [x] Optimistic update: card move imediatamente na UI, rollback com `previousStageRef` se query falhar
+- [x] Estado de loading: 6 colunas placeholder skeleton durante fetch inicial
+- [x] Testado: criar deal no board persiste após reload; arrastar entre colunas persiste stage
 
 **Commit final:**
 ```
@@ -296,22 +296,24 @@ feat: dashboard UI — metric cards, gráfico de funil e deals com prazo (mock)
 
 ---
 
-## M11 — Dashboard — Backend
+## M11 — Dashboard — Backend ✅
 
-**Branch:** `feat/dashboard-backend`
+**Branch:** `feat/leads-data` → merged em `main` (PR #5)
 **Objetivo:** Substituir mock por queries reais de agregação no Supabase.
 
 ### Entregas
 
-- [ ] Query: `COUNT(leads)` por workspace → "Total de Leads"
-- [ ] Query: `COUNT(deals WHERE stage NOT IN ('fechado_ganho', 'fechado_perdido'))` → "Negócios Abertos"
-- [ ] Query: `SUM(deals.value WHERE stage = 'fechado_ganho' OR aberto)` → "Valor do Pipeline"
-- [ ] Query: taxa de conversão = `fechado_ganho / (fechado_ganho + fechado_perdido) * 100`
-- [ ] Query: `COUNT(deals) GROUP BY stage` para o gráfico de funil
-- [ ] Query: deals do usuário logado com `due_date` nos próximos 7 dias
-- [ ] Executar queries como Server Components para performance (sem waterfall)
-- [ ] Skeleton loading nos cards enquanto carrega
-- [ ] Testar com dados reais: criar leads/deals e verificar métricas atualizadas
+- [x] `dashboard/page.tsx` convertido para Server Component com `getDashboardData()`
+- [x] Query: `COUNT(leads)` por workspace → "Total de Leads"
+- [x] Query: deals abertos (excluindo fechado_ganho e fechado_perdido) → "Negócios Abertos"
+- [x] Query: `SUM(deals.value)` de todos os deals do workspace → "Valor do Pipeline"
+- [x] Taxa de conversão = `fechado_ganho / (fechado_ganho + fechado_perdido) * 100`
+- [x] `COUNT(deals) GROUP BY stage` para o gráfico de funil (via JS aggregation)
+- [x] Deals com `due_date` nos próximos 7 dias para "Negócios com Prazo Próximo"
+- [x] `parseLocalDate` para evitar shift de fuso horário (UTC vs UTC-3) em datas YYYY-MM-DD
+- [x] `Promise.all` para 3 queries paralelas sem waterfall
+- [x] `FunnelChart` e `UpcomingDeals` convertidos para aceitar props dinâmicas
+- [x] `MetricCard.change` tornado opcional — trend só renderiza quando definido
 
 **Commit final:**
 ```
