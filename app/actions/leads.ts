@@ -21,7 +21,8 @@ export async function fetchLeads(search?: string, status?: string): Promise<Lead
   }
 
   if (search?.trim()) {
-    const q = search.trim()
+    // Remove vírgulas — são separadores no PostgREST .or() e quebrariam o filtro
+    const q = search.trim().replace(/,/g, '')
     query = query.or(`name.ilike.%${q}%,company.ilike.%${q}%,email.ilike.%${q}%`)
   }
 

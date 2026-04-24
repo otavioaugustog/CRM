@@ -34,6 +34,7 @@ export default function LeadsPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const filterMounted = useRef(false);
 
   const loadLeads = useCallback(async (q: string, status: string) => {
     setLoading(true);
@@ -42,18 +43,17 @@ export default function LeadsPage() {
     setLoading(false);
   }, []);
 
-  // Initial load
+  // Initial load — sem debounce
   useEffect(() => {
     loadLeads("", "todos");
   }, [loadLeads]);
 
-  // Debounced reload on filter change
+  // Debounced reload quando filtros mudam (pula o mount inicial)
   useEffect(() => {
+    if (!filterMounted.current) { filterMounted.current = true; return; }
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => loadLeads(search, statusFilter), 350);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [search, statusFilter, loadLeads]);
 
   function handleOpenNew() {

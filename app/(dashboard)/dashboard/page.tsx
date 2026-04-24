@@ -91,16 +91,24 @@ async function getDashboardData() {
   const in7Days = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
   in7Days.setHours(23, 59, 59, 999);
 
+  // Parseia "YYYY-MM-DD" como data local (evita shift de timezone com Date("YYYY-MM-DD"))
+  function parseLocalDate(dateStr: string): Date {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  }
+
   const upcomingDeals: UpcomingDealItem[] = deals
     .filter((d) => {
       if (!d.due_date || CLOSED_STAGES.includes(d.stage)) return false;
-      const due = new Date(d.due_date);
+      const due = parseLocalDate(d.due_date);
       return due >= today && due <= in7Days;
     })
-    .sort((a, b) => new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime())
+    .sort((a, b) =>
+      parseLocalDate(a.due_date!).getTime() - parseLocalDate(b.due_date!).getTime()
+    )
     .slice(0, 5)
     .map((d) => {
-      const due = new Date(d.due_date!);
+      const due = parseLocalDate(d.due_date!);
       const diffMs = due.getTime() - today.getTime();
       const daysUntilDue = Math.round(diffMs / (1000 * 60 * 60 * 24));
       const leadName = leads.find((l) => l.id === d.lead_id)?.name ?? "—";
