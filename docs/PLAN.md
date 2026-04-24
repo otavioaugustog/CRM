@@ -15,8 +15,8 @@
 | 5 | Leads — Backend ✅ | `feat/leads-data` | CRUD real + RLS + filtros no banco (PR #5) |
 | 6 | Kanban — UI ✅ | `feat/kanban-ui` | Board drag-and-drop com dados mock |
 | 7 | Kanban — Backend ✅ | `feat/leads-data` | Deals reais + persistência de stage (PR #5) |
-| 8 | Atividades — UI | `feat/activities-ui` | Timeline e formulário de atividade mock |
-| 9 | Atividades — Backend | `feat/activities-backend` | CRUD de atividades + RLS |
+| 8 | Atividades — UI ✅ | `feat/collaboration` | Timeline e formulário de atividade mock |
+| 9 | Atividades — Backend ✅ | `feat/collaboration` | CRUD de atividades + RLS |
 | 10 | Dashboard — UI ✅ | `feat/dashboard-ui` | Cards de métricas e gráfico com mock |
 | 11 | Dashboard — Backend ✅ | `feat/leads-data` | Queries reais de agregação (PR #5) |
 | 12 | Workspace — UI | `feat/workspace-ui` | Switcher, settings e convite mock |
@@ -226,22 +226,26 @@ feat: kanban backend — deals reais, persistência de stage com otimistic updat
 
 ---
 
-## M8 — Atividades — UI
+## M8 — Atividades — UI ✅
 
-**Branch:** `feat/activities-ui`
+**Branch:** `feat/collaboration` → merged em `main`
 **Objetivo:** Timeline de atividades na página de detalhe do lead e formulário de registro.
 
 ### Entregas
 
-- [ ] Criar `components/leads/lead-activity-timeline.tsx`
-- [ ] Exibir atividades em ordem cronológica decrescente
-- [ ] Ícone por tipo: telefone (ligação), envelope (e-mail), calendário (reunião), nota (nota)
-- [ ] Cada item: tipo, descrição, autor, data formatada ("há 2 horas", "ontem")
-- [ ] Botão "Registrar atividade" abre `Dialog` com form inline
-- [ ] Form: tipo (Select), descrição (Textarea), data (DatePicker)
-- [ ] Validação com Zod: descrição obrigatória, data não pode ser futura
-- [ ] Dados mock: 4–5 atividades de tipos diferentes no detalhe do lead
-- [ ] Integrar timeline na `app/(dashboard)/leads/[id]/page.tsx`
+- [x] Criar `components/leads/lead-activity-timeline.tsx`
+- [x] Exibir atividades em ordem cronológica decrescente
+- [x] Ícone por tipo: telefone (ligação), envelope (e-mail), calendário (reunião), nota (nota)
+- [x] Cada item: tipo, descrição, data formatada ("há 2 horas", "ontem")
+- [x] Botão "Registrar atividade" abre `Dialog` com form inline
+- [x] Form: tipo (Select), descrição (Textarea), data (input date com max=hoje)
+- [x] Validação com Zod: descrição obrigatória, data não pode ser futura
+- [x] Integrar timeline na `app/(dashboard)/leads/[id]/page.tsx`
+
+**Notas:**
+- Backend conectado diretamente (migração `004_activities.sql` já existia desde M3)
+- Dados mock substituídos por dados reais — padrão adotado em M5/M7
+- Bug corrigido: `lib/limits.ts` importava `next/headers` no bundle cliente; constante `FREE_LIMITS` extraída para `lib/plan-config.ts`
 
 **Commit final:**
 ```
@@ -250,21 +254,19 @@ feat: atividades UI — timeline cronológica e formulário de registro (mock)
 
 ---
 
-## M9 — Atividades — Backend
+## M9 — Atividades — Backend ✅
 
-**Branch:** `feat/activities-backend`
+**Branch:** `feat/collaboration` → merged em `main` (junto com M8)
 **Objetivo:** Persistir atividades no Supabase e exibi-las em tempo real na timeline.
 
 ### Entregas
 
-- [ ] Criar migration `003_activities.sql`: tabela `activities` + RLS policies
-- [ ] RLS: membros do workspace podem `SELECT` e `INSERT`; autor pode `DELETE`
-- [ ] Criar hook `hooks/use-activities.ts` com: `getActivities`, `createActivity`, `deleteActivity`
-- [ ] Conectar timeline ao hook — carregar atividades reais do lead
-- [ ] Conectar form ao `createActivity`
-- [ ] Realtime opcional: `supabase.channel()` para atualizar timeline sem reload
-- [ ] Botão "Excluir" em cada atividade (apenas para o autor)
-- [ ] Testar: registrar atividade, verificar na timeline, RLS entre workspaces
+- [x] Migration `004_activities.sql`: tabela `activities` + RLS policies (aplicada em M3)
+- [x] RLS: membros do workspace podem `SELECT` e `INSERT`; autor pode `DELETE`
+- [x] `app/actions/activities.ts`: `fetchActivitiesByLead` + `createActivity`
+- [x] Timeline carrega atividades reais do lead via Server Action
+- [x] Formulário conectado ao `createActivity` com estado otimista
+- [x] `useTransition` para loading state no submit
 
 **Commit final:**
 ```

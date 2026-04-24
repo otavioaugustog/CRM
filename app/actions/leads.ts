@@ -2,7 +2,8 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { getActiveWorkspaceId } from '@/lib/get-workspace-id'
-import { canAddLead, FREE_LIMITS } from '@/lib/limits'
+import { canAddLead } from '@/lib/limits'
+import { FREE_LIMITS } from '@/lib/plan-config'
 import type { Lead, LeadStatus } from '@/types'
 
 export async function fetchLeads(search?: string, status?: string): Promise<Lead[]> {
