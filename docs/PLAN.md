@@ -372,30 +372,39 @@ feat: workspace backend — multi-tenant real, convites por email com Resend e R
 
 ---
 
-## M14 — Monetização
+## M14 — Monetização ✅
 
-**Branch:** `feat/monetization`
+**Branch:** `feat/billing-nextjs` → merged em `main` (PR #6)
 **Objetivo:** Stripe Checkout, webhook para ativar plano Pro, Customer Portal para gerenciar assinatura.
 
 ### Entregas
 
-- [ ] Instalar `stripe`
-- [ ] Criar `lib/stripe/client.ts` — instância do Stripe
-- [ ] Criar produto e preço no Stripe Dashboard (R$49/mês recorrente)
-- [ ] Criar `app/api/webhooks/stripe/route.ts` — handler com verificação de assinatura
-- [ ] Eventos do webhook: `checkout.session.completed` → ativa plano Pro; `customer.subscription.deleted` → reverte para Free
-- [ ] Webhook atualiza `workspaces.plan`, `stripe_customer_id` e `stripe_subscription_id`
-- [ ] Criar `app/api/stripe/checkout/route.ts` — cria Checkout Session e redireciona
-- [ ] Botão "Fazer upgrade para Pro" na página de billing dispara checkout
-- [ ] Criar `app/api/stripe/portal/route.ts` — cria Customer Portal Session
-- [ ] Botão "Gerenciar assinatura" aparece para plano Pro e abre Customer Portal
-- [ ] Página de billing exibe plano atual, data de renovação e status
-- [ ] Bloquear ações no Free limit: ao criar 51º lead ou 3º membro, modal de upgrade
-- [ ] Testar: checkout com cartão de teste Stripe, ativação do Pro, cancelamento via Portal
+- [x] Instalar `stripe`
+- [x] Criar `lib/stripe/client.ts` — instância do Stripe
+- [x] Criar produto e preço no Stripe Dashboard (R$49/mês recorrente)
+- [x] Criar `app/api/webhooks/stripe/route.ts` — Route Handler com verificação de assinatura HMAC
+- [x] Eventos: `checkout.session.completed` → Pro; `customer.subscription.deleted` → Free; `invoice.payment_failed` → log
+- [x] Webhook atualiza `workspaces.plan`, `stripe_customer_id` e `stripe_subscription_id`
+- [x] `subscription_data.metadata` propaga `workspace_id` e `user_id` para invoices
+- [x] Checkout e Portal via Server Actions (`app/actions/stripe.ts`) — padrão do projeto
+- [x] Botão "Assinar Pro" na billing page dispara checkout
+- [x] Botão "Gerenciar assinatura" aparece para plano Pro e abre Customer Portal
+- [x] Página de billing exibe plano atual, usage meters (leads/membros) e comparação Free vs Pro
+- [x] `lib/limits.ts` — `FREE_LIMITS`, `canAddLead()`, `canAddMember()` como fonte única da verdade
+- [x] `createLead` guarda `canAddLead()`; retorna `limitReached: true` ao atingir 50
+- [x] Banners amarelo (≥80%) e vermelho (100%) na página de leads com link para billing
+- [x] Modal de upgrade ao tentar criar lead no limite
+- [x] `canAddMember()` no route de convites substituiu código duplicado
+- [x] Sidebar badge FREE/PRO dinâmico via `onPlanChange` no `WorkspaceSwitcher`
+- [x] Testado: checkout com cartão de teste Stripe, ativação do Pro via webhook
+
+**Notas:**
+- Bug encontrado e corrigido: `BILLING_URL` apontava para `/dashboard/settings/billing` (404) — corrigido para `/settings/billing`
+- Bug encontrado e corrigido: `STRIPE_WEBHOOK_SECRET` salvo com typo (`hsec_` em vez de `whsec_`) causava `[400]` em todos os eventos
 
 **Commit final:**
 ```
-feat: monetização — Stripe Checkout, webhook de planos e Customer Portal
+feat: billing — Stripe webhook, limites de plano e sidebar dinâmica
 ```
 
 ---
