@@ -54,25 +54,25 @@ export default async function InvitePage({ params }: Props) {
   return (
     <div className="flex min-h-[80vh] items-center justify-center px-4">
       <div className="w-full max-w-md">
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-          <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50">
-            <Building2 className="h-7 w-7 text-indigo-600" />
+        <div className="rounded-2xl border border-border bg-card p-8 shadow-sm">
+          <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15">
+            <Building2 className="h-7 w-7 text-primary" />
           </div>
 
-          <h1 className="text-center text-xl font-bold text-slate-900">
+          <h1 className="text-center text-xl font-bold text-foreground">
             Você foi convidado!
           </h1>
-          <p className="mt-2 text-center text-sm text-slate-500">
+          <p className="mt-2 text-center text-sm text-muted-foreground">
             Você foi convidado para colaborar em
           </p>
-          <p className="mt-1 text-center text-lg font-semibold text-slate-900">
+          <p className="mt-1 text-center text-lg font-semibold text-foreground">
             {workspaceName}
           </p>
 
           <div className="mt-5 flex justify-center">
             <span
               className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${
-                role === 'admin' ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-600'
+                role === 'admin' ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'
               }`}
             >
               {role === 'admin' ? <Crown className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
@@ -80,7 +80,7 @@ export default async function InvitePage({ params }: Props) {
             </span>
           </div>
 
-          <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-slate-400">
+          <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
             <Clock className="h-3.5 w-3.5" />
             Convite válido até{' '}
             {new Date(invite.expires_at).toLocaleDateString('pt-BR', {
@@ -94,7 +94,7 @@ export default async function InvitePage({ params }: Props) {
             <AcceptButton token={token} workspaceId={invite.workspace_id} />
           </div>
 
-          <p className="mt-4 text-center text-xs text-slate-400">
+          <p className="mt-4 text-center text-xs text-muted-foreground">
             Ao aceitar, você terá acesso a todos os dados de {workspaceName}.
           </p>
         </div>
@@ -106,16 +106,16 @@ export default async function InvitePage({ params }: Props) {
 function InvalidInvite({ reason, suggestion }: { reason: string; suggestion?: string }) {
   return (
     <div className="flex min-h-[80vh] items-center justify-center px-4">
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm text-center">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50">
-          <Building2 className="h-7 w-7 text-rose-500" />
+      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-sm text-center">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/15">
+          <Building2 className="h-7 w-7 text-destructive" />
         </div>
-        <h1 className="text-lg font-bold text-slate-900">Convite inválido</h1>
-        <p className="mt-2 text-sm text-slate-500">{reason}</p>
-        {suggestion && <p className="mt-1 text-sm text-slate-400">{suggestion}</p>}
+        <h1 className="text-lg font-bold text-foreground">Convite inválido</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{reason}</p>
+        {suggestion && <p className="mt-1 text-sm text-muted-foreground/70">{suggestion}</p>}
         <a
           href="/dashboard"
-          className="mt-6 inline-block rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+          className="mt-6 inline-block rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
         >
           Ir para o dashboard
         </a>

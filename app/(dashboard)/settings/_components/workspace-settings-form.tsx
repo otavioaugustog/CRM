@@ -36,45 +36,41 @@ export function WorkspaceSettingsForm({ name, slug, isAdmin }: WorkspaceSettings
     setIsPending(true)
     const result = await updateWorkspace(values.name, values.slug)
     setIsPending(false)
-
-    if (result.error) {
-      toast.error(result.error)
-    } else {
-      toast.success('Workspace atualizado.')
-    }
+    if (result.error) toast.error(result.error)
+    else toast.success('Workspace atualizado.')
   }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-1">
-        <label className="text-sm font-medium text-slate-700" htmlFor="ws-name">
+        <label className="text-sm font-medium text-foreground" htmlFor="ws-name">
           Nome do workspace
         </label>
         <input
           id="ws-name"
           {...register('name')}
           disabled={!isAdmin}
-          className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
         />
-        {errors.name && <p className="text-xs text-rose-500">{errors.name.message}</p>}
+        {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
       </div>
 
       <div className="space-y-1">
-        <label className="text-sm font-medium text-slate-700" htmlFor="ws-slug">
+        <label className="text-sm font-medium text-foreground" htmlFor="ws-slug">
           Slug (URL amigável)
         </label>
-        <div className="flex items-center rounded-md border border-slate-200 bg-white focus-within:ring-2 focus-within:ring-indigo-500">
-          <span className="select-none border-r border-slate-200 px-3 py-2 text-sm text-slate-400">
+        <div className="flex items-center rounded-md border border-input bg-background focus-within:ring-2 focus-within:ring-ring">
+          <span className="select-none border-r border-input px-3 py-2 text-sm text-muted-foreground">
             pipeflow.app/
           </span>
           <input
             id="ws-slug"
             {...register('slug')}
             disabled={!isAdmin}
-            className="flex-1 rounded-r-md bg-transparent px-3 py-2 text-sm text-slate-900 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex-1 rounded-r-md bg-transparent px-3 py-2 text-sm text-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
           />
         </div>
-        {errors.slug && <p className="text-xs text-rose-500">{errors.slug.message}</p>}
+        {errors.slug && <p className="text-xs text-destructive">{errors.slug.message}</p>}
       </div>
 
       {isAdmin && (
@@ -82,7 +78,7 @@ export function WorkspaceSettingsForm({ name, slug, isAdmin }: WorkspaceSettings
           <button
             type="submit"
             disabled={isPending || !isDirty}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isPending ? 'Salvando…' : 'Salvar alterações'}
           </button>
