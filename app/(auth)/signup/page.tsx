@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, MailCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,7 @@ type FormData = z.infer<typeof schema>;
 
 export default function SignupPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [confirmedEmail, setConfirmedEmail] = useState<string | null>(null);
@@ -42,14 +43,16 @@ export default function SignupPage() {
     setLoading(true);
     setAuthError(null);
 
+    const next = searchParams.get('next')
+    const postSignupPath = next && next.startsWith('/invite/') ? next : '/onboarding'
+
     const supabase = createClient();
     const { data: result, error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
       options: {
         data: { name: data.name },
-        // após confirmar o e-mail, o callback redireciona para /onboarding
-        emailRedirectTo: `${window.location.origin}/api/auth/callback?next=/onboarding`,
+        emailRedirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(postSignupPath)}`,
       },
     });
 
@@ -64,8 +67,7 @@ export default function SignupPage() {
     }
 
     if (result.session) {
-      // confirmação de e-mail desativada: sessão criada imediatamente
-      router.push("/onboarding");
+      router.push(postSignupPath);
       router.refresh();
       return;
     }
