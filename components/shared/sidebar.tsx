@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useCallback } from "react";
 import {
   LayoutDashboard,
   Users,
@@ -24,6 +25,9 @@ export const NAV_LINKS = [
 
 export function SidebarContent() {
   const pathname = usePathname();
+  const [plan, setPlan] = useState<string>("free");
+  const handlePlanChange = useCallback((p: string) => setPlan(p), []);
+  const isPro = plan === "pro";
 
   return (
     <div className="flex h-full flex-col bg-sidebar">
@@ -39,7 +43,7 @@ export function SidebarContent() {
 
       {/* Workspace switcher */}
       <div className="border-b border-sidebar-border p-2">
-        <WorkspaceSwitcher />
+        <WorkspaceSwitcher onPlanChange={handlePlanChange} />
       </div>
 
       {/* Navigation */}
@@ -67,7 +71,7 @@ export function SidebarContent() {
         })}
       </nav>
 
-      {/* Footer — upgrade CTA or plan badge */}
+      {/* Footer — plan badge + upgrade CTA */}
       <div className="border-t border-sidebar-border p-3">
         <div className="rounded-lg bg-sidebar-accent px-3 py-2.5">
           <div className="mb-2 flex items-center justify-between">
@@ -78,17 +82,26 @@ export function SidebarContent() {
               variant="secondary"
               className="h-4 px-1.5 text-[10px] font-bold text-primary"
             >
-              FREE
+              {isPro ? "PRO" : "FREE"}
             </Badge>
           </div>
-          <Button
-            size="sm"
-            className="w-full gap-1.5 text-xs"
-            variant="default"
-          >
-            <Rocket className="h-3.5 w-3.5" />
-            Fazer upgrade
-          </Button>
+          {isPro ? (
+            <Link
+              href="/settings/billing"
+              className="flex w-full items-center justify-center gap-1.5 rounded-md bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
+            >
+              <Zap className="h-3.5 w-3.5" />
+              Gerenciar plano
+            </Link>
+          ) : (
+            <Link
+              href="/settings/billing"
+              className="flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              <Rocket className="h-3.5 w-3.5" />
+              Fazer upgrade
+            </Link>
+          )}
         </div>
       </div>
     </div>

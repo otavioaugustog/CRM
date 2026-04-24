@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getActiveWorkspaceId } from '@/lib/get-workspace-id'
+import { canAddMember } from '@/lib/limits'
 import { Resend } from 'resend'
 import { render } from '@react-email/render'
 import { InviteEmail } from '@/lib/resend/emails/invite-email'
-
-const MAX_FREE_MEMBERS = 2
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -33,7 +32,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Apenas admins podem convidar membros.' }, { status: 403 })
   }
 
-  // Verifica limite do plano Free
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: workspace } = await (supabase as any)
     .from('workspaces')
@@ -41,19 +39,12 @@ export async function POST(req: NextRequest) {
     .eq('id', workspaceId)
     .single()
 
-  if (workspace?.plan === 'free') {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { count } = await (supabase as any)
-      .from('workspace_members')
-      .select('id', { count: 'exact', head: true })
-      .eq('workspace_id', workspaceId)
-
-    if ((count ?? 0) >= MAX_FREE_MEMBERS) {
-      return NextResponse.json(
-        { error: 'Limite de 2 membros atingido no plano Free. Faça upgrade para Pro.', limitReached: true },
-        { status: 403 }
-      )
-    }
+  const allowed = await canAddMember()
+  if (!allowed) {
+    return NextResponse.json(
+      { error: 'Limite de membros atingido no plano Free. Faça upgrade para Pro.', limitReached: true },
+      { status: 403 }
+    )
   }
 
   const body = await req.json()

@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Plus } from "lucide-react";
+import { Plus, AlertTriangle, Zap } from "lucide-react";
 import { toast } from "sonner";
+import Link from "next/link";
 import type { Lead } from "@/types";
-import { fetchLeads, createLead, updateLead, deleteLead } from "@/app/actions/leads";
+import { fetchLeads, fetchLeadLimitStatus, createLead, updateLead, deleteLead } from "@/app/actions/leads";
+import { FREE_LIMITS } from "@/lib/limits";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -33,6 +35,12 @@ export default function LeadsPage() {
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [limitStatus, setLimitStatus] = useState<{
+    isPro: boolean;
+    count: number;
+    max: number;
+  } | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const filterMounted = useRef(false);
 
@@ -43,12 +51,13 @@ export default function LeadsPage() {
     setLoading(false);
   }, []);
 
-  // Initial load — sem debounce
+  // Initial load
   useEffect(() => {
     loadLeads("", "todos");
+    fetchLeadLimitStatus().then(setLimitStatus);
   }, [loadLeads]);
 
-  // Debounced reload quando filtros mudam (pula o mount inicial)
+  // Debounced reload quando filtros mudam
   useEffect(() => {
     if (!filterMounted.current) { filterMounted.current = true; return; }
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -56,7 +65,12 @@ export default function LeadsPage() {
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [search, statusFilter, loadLeads]);
 
+  const atLimit = limitStatus && !limitStatus.isPro && limitStatus.count >= limitStatus.max;
+  const nearLimit = limitStatus && !limitStatus.isPro &&
+    limitStatus.count >= Math.floor(limitStatus.max * 0.8) && !atLimit;
+
   function handleOpenNew() {
+    if (atLimit) { setUpgradeOpen(true); return; }
     setEditingLead(null);
     setSheetOpen(true);
   }
@@ -77,8 +91,14 @@ export default function LeadsPage() {
       toast.success("Lead atualizado com sucesso.");
     } else {
       const res = await createLead(data);
+      if (res.limitReached) {
+        setSheetOpen(false);
+        setUpgradeOpen(true);
+        return;
+      }
       if (res.error) { toast.error(res.error); return; }
       setLeads((prev) => [res.lead!, ...prev]);
+      setLimitStatus((prev) => prev ? { ...prev, count: prev.count + 1 } : prev);
       toast.success("Lead criado com sucesso.");
     }
     setSheetOpen(false);
@@ -91,6 +111,7 @@ export default function LeadsPage() {
     setDeleting(false);
     if (res.error) { toast.error(res.error); return; }
     setLeads((prev) => prev.filter((l) => l.id !== deleteId));
+    setLimitStatus((prev) => prev ? { ...prev, count: Math.max(0, prev.count - 1) } : prev);
     setDeleteId(null);
     toast.success("Lead excluído.");
   }
@@ -112,6 +133,33 @@ export default function LeadsPage() {
             Novo lead
           </Button>
         </div>
+
+        {/* Aviso de limite */}
+        {atLimit && (
+          <div className="flex items-center gap-3 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm dark:border-rose-800 dark:bg-rose-950">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-rose-500" />
+            <span className="text-rose-700 dark:text-rose-300">
+              Você atingiu o limite de <strong>{FREE_LIMITS.leads} leads</strong> do plano Free.{" "}
+              <Link href="/settings/billing" className="font-medium underline underline-offset-2">
+                Faça upgrade para Pro
+              </Link>{" "}
+              para adicionar leads ilimitados.
+            </span>
+          </div>
+        )}
+
+        {nearLimit && (
+          <div className="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm dark:border-amber-800 dark:bg-amber-950">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" />
+            <span className="text-amber-700 dark:text-amber-300">
+              Você está usando <strong>{limitStatus!.count}/{limitStatus!.max} leads</strong> do plano Free.{" "}
+              <Link href="/settings/billing" className="font-medium underline underline-offset-2">
+                Faça upgrade para Pro
+              </Link>{" "}
+              antes de atingir o limite.
+            </span>
+          </div>
+        )}
 
         <LeadList
           leads={leads}
@@ -146,6 +194,30 @@ export default function LeadsPage() {
           />
         </SheetContent>
       </Sheet>
+
+      {/* Dialog — upgrade CTA */}
+      <Dialog open={upgradeOpen} onOpenChange={setUpgradeOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Zap className="h-5 w-5 text-primary" />
+              Limite de leads atingido
+            </DialogTitle>
+            <DialogDescription>
+              O plano Free permite até <strong>{FREE_LIMITS.leads} leads</strong>.
+              Faça upgrade para o plano Pro e adicione leads ilimitados.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUpgradeOpen(false)}>
+              Agora não
+            </Button>
+            <Button onClick={() => { setUpgradeOpen(false); window.location.href = '/settings/billing'; }}>
+              Ver planos
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog — confirmar exclusão */}
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>

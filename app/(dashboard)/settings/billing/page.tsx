@@ -1,7 +1,9 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { fetchCurrentWorkspace, getMemberCount } from '@/app/actions/workspace'
-import { CheckCircle2, Zap, Users, BarChart3, Mail } from 'lucide-react'
+import { createCheckoutSession, createPortalSession } from '@/app/actions/stripe'
+import { getActiveWorkspaceId } from '@/lib/get-workspace-id'
+import { CheckCircle2, Zap, Users, BarChart3, FileText } from 'lucide-react'
 
 export const metadata = { title: 'Planos e Cobrança — PipeFlow CRM' }
 
@@ -21,14 +23,28 @@ const PRO_FEATURES = [
   'Suporte prioritário',
 ]
 
+async function getLeadCount(workspaceId: string): Promise<number> {
+  const supabase = await createClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { count } = await (supabase as any)
+    .from('leads')
+    .select('id', { count: 'exact', head: true })
+    .eq('workspace_id', workspaceId)
+  return count ?? 0
+}
+
 export default async function BillingPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [workspace, memberCount] = await Promise.all([
+  const workspaceId = await getActiveWorkspaceId()
+  if (!workspaceId) redirect('/onboarding')
+
+  const [workspace, memberCount, leadCount] = await Promise.all([
     fetchCurrentWorkspace(),
     getMemberCount(),
+    getLeadCount(workspaceId),
   ])
 
   if (!workspace) redirect('/onboarding')
@@ -57,12 +73,22 @@ export default async function BillingPage() {
               {isPro ? 'R$49/mês · Recursos ilimitados' : 'Grátis · Limites de membros e leads'}
             </p>
           </div>
+          {isPro && (
+            <form action={createPortalSession}>
+              <button
+                type="submit"
+                className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+              >
+                Gerenciar assinatura
+              </button>
+            </form>
+          )}
         </div>
 
         {!isPro && (
           <div className="mt-5 space-y-3">
             <UsageMeter icon={<Users className="h-4 w-4" />} label="Colaboradores" current={memberCount} max={2} />
-            <UsageMeter icon={<Mail className="h-4 w-4" />} label="Leads" current={0} max={50} note="conectado no M5" />
+            <UsageMeter icon={<FileText className="h-4 w-4" />} label="Leads" current={leadCount} max={50} />
           </div>
         )}
       </section>
@@ -109,32 +135,26 @@ export default async function BillingPage() {
               Plano atual
             </div>
           ) : (
-            <button
-              disabled
-              className="mt-5 w-full rounded-lg bg-primary py-2 text-sm font-medium text-primary-foreground opacity-50 cursor-not-allowed"
-              title="Integração Stripe disponível em breve"
-            >
-              Fazer upgrade — em breve
-            </button>
+            <form action={createCheckoutSession} className="mt-5">
+              <button
+                type="submit"
+                className="w-full rounded-lg bg-primary py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                Assinar Pro — R$49/mês
+              </button>
+            </form>
           )}
         </div>
       </div>
-
-      {!isPro && (
-        <p className="text-center text-xs text-muted-foreground">
-          Integração de pagamento via Stripe será ativada em breve.
-        </p>
-      )}
     </div>
   )
 }
 
-function UsageMeter({ icon, label, current, max, note }: {
+function UsageMeter({ icon, label, current, max }: {
   icon: React.ReactNode
   label: string
   current: number
   max: number
-  note?: string
 }) {
   const pct = Math.min(100, Math.round((current / max) * 100))
   const nearLimit = pct >= 80
@@ -144,7 +164,6 @@ function UsageMeter({ icon, label, current, max, note }: {
       <div className="flex items-center justify-between text-xs">
         <span className="flex items-center gap-1 text-muted-foreground">
           {icon}{label}
-          {note && <span className="text-muted-foreground/60">({note})</span>}
         </span>
         <span className={nearLimit ? 'font-medium text-amber-500' : 'text-muted-foreground'}>
           {current}/{max}
