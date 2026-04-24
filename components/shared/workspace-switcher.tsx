@@ -18,6 +18,13 @@ import { createClient } from "@/lib/supabase/client";
 import type { Workspace } from "@/types";
 
 const STORAGE_KEY = "pipeflow:workspace";
+const COOKIE_KEY = "pipeflow_workspace";
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 dias
+
+function persistWorkspace(id: string) {
+  localStorage.setItem(STORAGE_KEY, id);
+  document.cookie = `${COOKIE_KEY}=${id}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
+}
 
 export function WorkspaceSwitcher() {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
@@ -41,7 +48,9 @@ export function WorkspaceSwitcher() {
 
       const savedId = localStorage.getItem(STORAGE_KEY);
       const saved = savedId ? data.find((w) => w.id === savedId) : null;
-      setCurrent(saved ?? data[0]);
+      const active = saved ?? data[0];
+      setCurrent(active);
+      persistWorkspace(active.id);
     }
 
     load();
@@ -49,7 +58,7 @@ export function WorkspaceSwitcher() {
 
   function switchWorkspace(ws: Workspace) {
     setCurrent(ws);
-    localStorage.setItem(STORAGE_KEY, ws.id);
+    persistWorkspace(ws.id);
   }
 
   if (!current) {

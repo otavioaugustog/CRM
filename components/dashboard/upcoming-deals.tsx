@@ -2,33 +2,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
 
-interface UpcomingDeal {
+export interface UpcomingDealItem {
   id: string;
   title: string;
   lead: string;
   value: number;
   daysUntilDue: number;
+  dueLabel: string;
 }
-
-function addDays(n: number): Date {
-  const d = new Date();
-  d.setDate(d.getDate() + n);
-  return d;
-}
-
-function formatDueDate(d: Date): string {
-  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
-}
-
-const DEALS: UpcomingDeal[] = [
-  { id: "1", title: "Renovação Contrato Alírios", lead: "Marcos Alírios", value: 48000, daysUntilDue: 0 },
-  { id: "2", title: "Upgrade ERP Nexus", lead: "Fernanda Costa", value: 32500, daysUntilDue: 1 },
-  { id: "3", title: "Consultoria Setup Nuvem", lead: "Rafael Nunes", value: 18000, daysUntilDue: 3 },
-  { id: "4", title: "Licenças Microsoft 365", lead: "Ana Carvalho", value: 9600, daysUntilDue: 5 },
-  { id: "5", title: "Suporte Premium Anual", lead: "Bruno Silva", value: 24000, daysUntilDue: 7 },
-];
 
 function UrgencyBadge({ days }: { days: number }) {
+  if (days < 0)
+    return <Badge className="bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 border-0 font-medium">Atrasado</Badge>;
   if (days === 0)
     return <Badge className="bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 border-0 font-medium">Hoje</Badge>;
   if (days === 1)
@@ -38,7 +23,7 @@ function UrgencyBadge({ days }: { days: number }) {
   return <Badge variant="secondary">{days} dias</Badge>;
 }
 
-export function UpcomingDeals() {
+export function UpcomingDeals({ deals }: { deals: UpcomingDealItem[] }) {
   return (
     <Card>
       <CardHeader>
@@ -48,17 +33,18 @@ export function UpcomingDeals() {
         </p>
       </CardHeader>
       <CardContent className="px-0 pb-0">
-        <ul className="divide-y divide-border">
-          {DEALS.map((deal) => {
-            const due = addDays(deal.daysUntilDue);
-            return (
+        {deals.length === 0 ? (
+          <p className="px-6 pb-6 text-sm text-muted-foreground">
+            Nenhum negócio com prazo próximo.
+          </p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {deals.map((deal) => (
               <li key={deal.id} className="flex items-start justify-between gap-3 px-6 py-3">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium leading-tight">
-                    {deal.title}
-                  </p>
+                  <p className="truncate text-sm font-medium leading-tight">{deal.title}</p>
                   <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                    {deal.lead} · {formatDueDate(due)}
+                    {deal.lead} · {deal.dueLabel}
                   </p>
                 </div>
                 <div className="flex flex-col items-end gap-1 shrink-0">
@@ -68,9 +54,9 @@ export function UpcomingDeals() {
                   <UrgencyBadge days={deal.daysUntilDue} />
                 </div>
               </li>
-            );
-          })}
-        </ul>
+            ))}
+          </ul>
+        )}
       </CardContent>
     </Card>
   );

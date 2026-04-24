@@ -12,16 +12,13 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const STAGES = [
-  { stage: "Novo Lead", count: 42, color: "#94a3b8" },
-  { stage: "Contato Realizado", count: 31, color: "#3b82f6" },
-  { stage: "Proposta Enviada", count: 18, color: "#8b5cf6" },
-  { stage: "Negociação", count: 12, color: "#f59e0b" },
-  { stage: "Fechado Ganho", count: 24, color: "#10b981" },
-  { stage: "Fechado Perdido", count: 16, color: "#f43f5e" },
-];
+export interface FunnelStage {
+  stage: string;
+  count: number;
+  color: string;
+}
 
-export function FunnelChart() {
+export function FunnelChart({ stages }: { stages: FunnelStage[] }) {
   return (
     <Card className="lg:col-span-2">
       <CardHeader>
@@ -33,13 +30,14 @@ export function FunnelChart() {
       <CardContent>
         <ResponsiveContainer width="100%" height={264}>
           <BarChart
-            data={STAGES}
+            data={stages}
             layout="vertical"
             margin={{ top: 0, right: 24, bottom: 0, left: 0 }}
           >
             <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border)" />
             <XAxis
               type="number"
+              allowDecimals={false}
               tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
               axisLine={false}
               tickLine={false}
@@ -61,10 +59,10 @@ export function FunnelChart() {
                 background: "var(--card)",
                 color: "var(--card-foreground)",
               }}
-              formatter={(value) => [`${value} negócios`, "Volume"]}
+              formatter={(value) => [`${value} negócio${value === 1 ? "" : "s"}`, "Volume"]}
             />
             <Bar dataKey="count" radius={[0, 4, 4, 0]} maxBarSize={28}>
-              {STAGES.map((s) => (
+              {stages.map((s) => (
                 <Cell key={s.stage} fill={s.color} />
               ))}
             </Bar>
