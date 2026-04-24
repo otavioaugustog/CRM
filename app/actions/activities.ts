@@ -69,3 +69,21 @@ export async function createActivity(
   if (error) return { success: false, error: error.message }
   return { success: true, activity: activity as Activity }
 }
+
+export async function deleteActivity(
+  id: string
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Não autenticado' }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any)
+    .from('activities')
+    .delete()
+    .eq('id', id)
+    .eq('author_id', user.id)
+
+  if (error) return { success: false, error: error.message }
+  return { success: true }
+}

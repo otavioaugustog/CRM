@@ -3,6 +3,7 @@ import { Phone, Mail, Building2, Briefcase, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { fetchLeadById } from "@/app/actions/leads";
 import { fetchActivitiesByLead } from "@/app/actions/activities";
+import { createClient } from "@/lib/supabase/server";
 import { formatDate, getInitials } from "@/lib/utils";
 import { LeadStatusBadge } from "@/components/leads/lead-list";
 import { LeadActivityTimeline } from "@/components/leads/lead-activity-timeline";
@@ -13,6 +14,8 @@ interface Props {
 
 export default async function LeadDetailPage({ params }: Props) {
   const { id } = await params;
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
   const [lead, activities] = await Promise.all([
     fetchLeadById(id),
     fetchActivitiesByLead(id),
@@ -106,7 +109,7 @@ export default async function LeadDetailPage({ params }: Props) {
 
         {/* Timeline de atividades */}
         <div className="flex flex-col gap-4 lg:col-span-2">
-          <LeadActivityTimeline leadId={id} initialActivities={activities} />
+          <LeadActivityTimeline leadId={id} initialActivities={activities} currentUserId={user?.id ?? ""} />
         </div>
       </div>
     </div>
