@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { stripe } from '@/lib/stripe/client'
 import type Stripe from 'stripe'
 
-// Desabilita o body parser do Next.js — Stripe precisa do raw body para validar a assinatura
+// Raw body obrigatório para validação de assinatura do Stripe
 export const runtime = 'nodejs'
 
 function serviceClient() {
@@ -37,14 +37,12 @@ async function revertToFree(subscriptionId: string) {
   const supabase = serviceClient()
   await supabase
     .from('workspaces')
-    .update({
-      plan: 'free',
-      stripe_subscription_id: null,
-    })
+    .update({ plan: 'free', stripe_subscription_id: null })
     .eq('stripe_subscription_id', subscriptionId)
 }
 
 export async function POST(req: NextRequest) {
+  // Stripe precisa do raw body para validar a assinatura — nunca usar req.json()
   const body = await req.text()
   const sig = req.headers.get('stripe-signature')
 
@@ -64,10 +62,12 @@ export async function POST(req: NextRequest) {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session
       if (session.mode !== 'subscription') break
+
+      const workspaceId = session.metadata?.workspace_id
       await activatePro(
         session.customer as string,
         session.subscription as string,
-        session.metadata?.workspace_id,
+        workspaceId,
       )
       break
     }
@@ -75,6 +75,26 @@ export async function POST(req: NextRequest) {
     case 'customer.subscription.deleted': {
       const sub = event.data.object as Stripe.Subscription
       await revertToFree(sub.id)
+      break
+    }
+
+    case 'invoice.payment_failed': {
+      const invoice = event.data.object as Stripe.Invoice
+      // workspace_id e user_id propagados via subscription_data.metadata no checkout
+      // snapshot imutável do metadata da subscription no momento de emissão da invoice
+      const meta = invoice.parent?.subscription_details?.metadata
+      const workspaceId = meta?.workspace_id
+      const userId = meta?.user_id
+
+      // Stripe retentará automaticamente — não rebaixamos o plano aqui.
+      // O plano só volta a 'free' quando customer.subscription.deleted for emitido.
+
+      console.error('[stripe] invoice.payment_failed', {
+        invoiceId: invoice.id,
+        workspaceId,
+        userId,
+        amountDue: invoice.amount_due,
+      })
       break
     }
   }

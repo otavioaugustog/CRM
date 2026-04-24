@@ -26,7 +26,11 @@ function persistWorkspace(id: string) {
   document.cookie = `${COOKIE_KEY}=${id}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
 }
 
-export function WorkspaceSwitcher() {
+interface WorkspaceSwitcherProps {
+  onPlanChange?: (plan: string) => void;
+}
+
+export function WorkspaceSwitcher({ onPlanChange }: WorkspaceSwitcherProps) {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [current, setCurrent] = useState<Workspace | null>(null);
 
@@ -51,14 +55,16 @@ export function WorkspaceSwitcher() {
       const active = saved ?? data[0];
       setCurrent(active);
       persistWorkspace(active.id);
+      onPlanChange?.(active.plan ?? "free");
     }
 
     load();
-  }, []);
+  }, [onPlanChange]);
 
   function switchWorkspace(ws: Workspace) {
     setCurrent(ws);
     persistWorkspace(ws.id);
+    onPlanChange?.(ws.plan ?? "free");
   }
 
   if (!current) {

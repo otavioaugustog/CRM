@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { stripe } from '@/lib/stripe/client'
 import { getActiveWorkspaceId } from '@/lib/get-workspace-id'
 
-const BILLING_URL = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings/billing`
+const BILLING_URL = `${process.env.NEXT_PUBLIC_APP_URL}/settings/billing`
 
 export async function createCheckoutSession(): Promise<never> {
   const supabase = await createClient()
@@ -47,7 +47,12 @@ export async function createCheckoutSession(): Promise<never> {
     line_items: [{ price: process.env.STRIPE_PRO_PRICE_ID!, quantity: 1 }],
     success_url: `${BILLING_URL}?success=1`,
     cancel_url: `${BILLING_URL}?canceled=1`,
-    metadata: { workspace_id: workspaceId },
+    // metadata da session (checkout.session.completed)
+    metadata: { workspace_id: workspaceId, user_id: user.id },
+    // metadata da subscription — propagado para invoice.payment_failed
+    subscription_data: {
+      metadata: { workspace_id: workspaceId, user_id: user.id },
+    },
   })
 
   redirect(session.url!)

@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { getActiveWorkspaceId } from '@/lib/get-workspace-id'
+import { canAddLead, FREE_LIMITS } from '@/lib/limits'
 import type { Lead, LeadStatus } from '@/types'
 
 export async function fetchLeads(search?: string, status?: string): Promise<Lead[]> {
@@ -46,6 +47,25 @@ export async function fetchLeadById(id: string): Promise<Lead | null> {
   return (data as Lead) ?? null
 }
 
+export async function fetchLeadLimitStatus(): Promise<{
+  isPro: boolean
+  count: number
+  max: number
+}> {
+  const workspaceId = await getActiveWorkspaceId()
+  if (!workspaceId) return { isPro: false, count: 0, max: FREE_LIMITS.leads }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = await createClient() as any
+  const [planRes, countRes] = await Promise.all([
+    supabase.from('workspaces').select('plan').eq('id', workspaceId).single(),
+    supabase.from('leads').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId),
+  ])
+
+  const isPro = planRes.data?.plan === 'pro'
+  return { isPro, count: (countRes.count as number) ?? 0, max: FREE_LIMITS.leads }
+}
+
 export async function createLead(input: {
   name: string
   email: string
@@ -53,9 +73,12 @@ export async function createLead(input: {
   company?: string
   role?: string
   status: LeadStatus
-}): Promise<{ lead?: Lead; error?: string }> {
+}): Promise<{ lead?: Lead; error?: string; limitReached?: boolean }> {
   const workspaceId = await getActiveWorkspaceId()
   if (!workspaceId) return { error: 'Workspace não encontrado.' }
+
+  const allowed = await canAddLead()
+  if (!allowed) return { limitReached: true }
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
