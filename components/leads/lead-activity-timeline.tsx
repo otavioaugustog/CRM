@@ -27,6 +27,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -68,7 +69,7 @@ const schema = z.object({
     .string()
     .optional()
     .refine(
-      (v) => !v || v <= todayISO(),
+      (v) => !v || new Date(v) <= new Date(todayISO()),
       "A data não pode ser no futuro"
     ),
 });
@@ -108,20 +109,40 @@ export function LeadActivityTimeline({
 
   function onSubmit(data: FormData) {
     setServerError(null);
+
+    const tempId = `optimistic-${Date.now()}`;
+    const optimisticItem: Activity = {
+      id: tempId,
+      workspace_id: "",
+      lead_id: leadId,
+      type: data.type,
+      description: data.description,
+      author_id: "",
+      created_at: new Date().toISOString(),
+    };
+
+    setActivities((prev) => [optimisticItem, ...prev]);
+    setOpen(false);
+
     startTransition(async () => {
       const result = await createActivity({
         leadId,
         type: data.type,
         description: data.description,
       });
+
       if (!result.success) {
+        setActivities((prev) => prev.filter((a) => a.id !== tempId));
         setServerError(result.error ?? "Erro ao registrar atividade");
+        setOpen(true);
         return;
       }
+
       if (result.activity) {
-        setActivities((prev) => [result.activity!, ...prev]);
+        setActivities((prev) =>
+          prev.map((a) => (a.id === tempId ? result.activity! : a))
+        );
       }
-      setOpen(false);
     });
   }
 
@@ -151,14 +172,11 @@ export function LeadActivityTimeline({
         </div>
       ) : (
         <div className="divide-y divide-border">
-          {activities.map((activity, idx) => {
+          {activities.map((activity) => {
             const config = ACTIVITY_CONFIG[activity.type];
             const Icon = config.icon;
             return (
-              <div
-                key={activity.id}
-                className={cn("flex gap-3 px-5 py-4", idx === 0 && "rounded-t-none")}
-              >
+              <div key={activity.id} className="flex gap-3 px-5 py-4">
                 <div
                   className={cn(
                     "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full",
@@ -190,17 +208,20 @@ export function LeadActivityTimeline({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Registrar atividade</DialogTitle>
+            <DialogDescription>
+              Preencha o tipo, descrição e data para registrar uma nova atividade.
+            </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 py-2">
             <div className="flex flex-col gap-1.5">
-              <Label>Tipo</Label>
+              <Label htmlFor="activity-type">Tipo</Label>
               <Controller
                 control={control}
                 name="type"
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger id="activity-type" className="w-full">
                       <SelectValue placeholder="Selecione o tipo" />
                     </SelectTrigger>
                     <SelectContent>

@@ -21,10 +21,6 @@ export default async function LeadDetailPage({ params }: Props) {
   if (!lead) notFound();
 
   const initials = getInitials(lead.name);
-  const sortedActivities = [...activities].sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  );
-
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-3">
@@ -110,7 +106,7 @@ export default async function LeadDetailPage({ params }: Props) {
 
         {/* Timeline de atividades */}
         <div className="flex flex-col gap-4 lg:col-span-2">
-          <LeadActivityTimeline leadId={id} initialActivities={sortedActivities} />
+          <LeadActivityTimeline leadId={id} initialActivities={activities} />
         </div>
       </div>
     </div>

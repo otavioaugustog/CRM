@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { getActiveWorkspaceId } from '@/lib/get-workspace-id'
 import { FREE_LIMITS } from '@/lib/plan-config'
-export { FREE_LIMITS }
 
 async function getWorkspaceContext(table: 'leads' | 'workspace_members') {
   const workspaceId = await getActiveWorkspaceId()
