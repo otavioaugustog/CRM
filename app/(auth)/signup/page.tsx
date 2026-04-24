@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -26,7 +26,7 @@ const schema = z
 
 type FormData = z.infer<typeof schema>;
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
@@ -72,12 +72,10 @@ export default function SignupPage() {
       return;
     }
 
-    // confirmação de e-mail ativada: sem sessão ainda
     setConfirmedEmail(data.email);
     setLoading(false);
   }
 
-  // tela de "verifique seu e-mail"
   if (confirmedEmail) {
     return (
       <div className="rounded-xl border border-border bg-card p-8 shadow-sm text-center">
@@ -198,5 +196,13 @@ export default function SignupPage() {
         </Link>
       </p>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div className="rounded-xl border border-border bg-card p-8 shadow-sm h-64 animate-pulse" />}>
+      <SignupForm />
+    </Suspense>
   );
 }

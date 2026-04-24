@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -19,7 +19,7 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
@@ -135,12 +135,20 @@ export default function LoginPage() {
       <p className="mt-6 text-center text-sm text-muted-foreground">
         Não tem conta?{" "}
         <Link
-          href={searchParams.get('next') ? `/signup?next=${encodeURIComponent(searchParams.get('next')!)}` : '/signup'}
+          href={next ? `/signup?next=${encodeURIComponent(next)}` : '/signup'}
           className="font-medium text-primary hover:underline"
         >
           Cadastre-se
         </Link>
       </p>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="rounded-xl border border-border bg-card p-8 shadow-sm h-64 animate-pulse" />}>
+      <LoginForm />
+    </Suspense>
   );
 }
