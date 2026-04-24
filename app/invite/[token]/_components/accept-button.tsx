@@ -29,10 +29,13 @@ export function AcceptButton({ token, workspaceId }: AcceptButtonProps) {
       return
     }
 
-    // Persiste o workspace aceito no cookie e redireciona
+    // Persiste o workspace no cookie (30 dias) e força reload completo
+    // para que o WorkspaceSwitcher e o layout busquem os dados atualizados
     document.cookie = `pipeflow_workspace=${workspaceId}; path=/; max-age=${60 * 60 * 24 * 30}`
     toast.success('Convite aceito! Redirecionando…')
+    // Fix Bug 3: router.push + refresh para invalidar cache do Server Component
     router.push('/dashboard')
+    router.refresh()
   }
 
   return (

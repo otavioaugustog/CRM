@@ -197,7 +197,7 @@ export function MembersSection({
                   <div>
                     <p className="text-sm font-medium text-slate-700">{inv.email}</p>
                     <p className="text-xs text-slate-500">
-                      <RoleBadge role={inv.role as 'admin' | 'member'} inline /> · expira{' '}
+                      <RoleBadge role={inv.role as 'admin' | 'member'} /> · expira{' '}
                       {formatDate(inv.expires_at)}
                     </p>
                   </div>
@@ -287,12 +287,10 @@ export function MembersSection({
   )
 }
 
-function RoleBadge({ role, inline }: { role: 'admin' | 'member'; inline?: boolean }) {
+function RoleBadge({ role }: { role: 'admin' | 'member' }) {
   if (role === 'admin') {
     return (
-      <span
-        className={`inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 ${inline ? '' : ''}`}
-      >
+      <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
         <Crown className="h-3 w-3" />
         Admin
       </span>
