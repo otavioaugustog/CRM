@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect, useRef } from "react";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -10,6 +11,7 @@ import {
   StickyNote,
   AtSign,
   Plus,
+  Trash2,
 } from "lucide-react";
 import type { Activity, ActivityType } from "@/types";
 import { cn, formatRelativeDate } from "@/lib/utils";
@@ -32,7 +34,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { createActivity } from "@/app/actions/activities";
+import { createActivity, deleteActivity } from "@/app/actions/activities";
+import { createClient } from "@/lib/supabase/client";
 
 const ACTIVITY_CONFIG: Record<
   ActivityType,
@@ -79,16 +82,41 @@ type FormData = z.infer<typeof schema>;
 interface LeadActivityTimelineProps {
   leadId: string;
   initialActivities: Activity[];
+  currentUserId: string;
 }
 
 export function LeadActivityTimeline({
   leadId,
   initialActivities,
+  currentUserId,
 }: LeadActivityTimelineProps) {
   const [activities, setActivities] = useState<Activity[]>(initialActivities);
   const [open, setOpen] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`activities-lead-${leadId}`)
+      .on("broadcast", { event: "activity_inserted" }, ({ payload }) => {
+        const incoming = payload.activity as Activity;
+        setActivities((prev) =>
+          prev.some((a) => a.id === incoming.id) ? prev : [incoming, ...prev]
+        );
+      })
+      .on("broadcast", { event: "activity_deleted" }, ({ payload }) => {
+        setActivities((prev) => prev.filter((a) => a.id !== payload.id));
+      })
+      .subscribe();
+
+    channelRef.current = channel;
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [leadId]);
 
   const {
     register,
@@ -100,6 +128,30 @@ export function LeadActivityTimeline({
     resolver: zodResolver(schema),
     defaultValues: { type: "call", description: "", date: todayISO() },
   });
+
+  function handleDelete(id: string) {
+    const toRestore = activities.find((a) => a.id === id);
+    setDeletingId(id);
+    setActivities((prev) => prev.filter((a) => a.id !== id));
+
+    startTransition(async () => {
+      const result = await deleteActivity(id);
+      if (!result.success && toRestore) {
+        setActivities((prev) =>
+          [...prev, toRestore].sort(
+            (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          )
+        );
+      } else if (result.success) {
+        channelRef.current?.send({
+          type: "broadcast",
+          event: "activity_deleted",
+          payload: { id },
+        });
+      }
+      setDeletingId(null);
+    });
+  }
 
   function handleOpen() {
     reset({ type: "call", description: "", date: todayISO() });
@@ -142,6 +194,11 @@ export function LeadActivityTimeline({
         setActivities((prev) =>
           prev.map((a) => (a.id === tempId ? result.activity! : a))
         );
+        channelRef.current?.send({
+          type: "broadcast",
+          event: "activity_inserted",
+          payload: { activity: result.activity },
+        });
       }
     });
   }
@@ -176,7 +233,7 @@ export function LeadActivityTimeline({
             const config = ACTIVITY_CONFIG[activity.type];
             const Icon = config.icon;
             return (
-              <div key={activity.id} className="flex gap-3 px-5 py-4">
+              <div key={activity.id} className="group flex gap-3 px-5 py-4">
                 <div
                   className={cn(
                     "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full",
@@ -190,9 +247,21 @@ export function LeadActivityTimeline({
                     <span className="text-xs font-medium text-foreground">
                       {config.label}
                     </span>
-                    <span className="shrink-0 text-xs text-muted-foreground">
-                      {formatRelativeDate(activity.created_at)}
-                    </span>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="text-xs text-muted-foreground" suppressHydrationWarning>
+                        {formatRelativeDate(activity.created_at)}
+                      </span>
+                      {activity.author_id === currentUserId && (
+                        <button
+                          onClick={() => handleDelete(activity.id)}
+                          disabled={deletingId === activity.id}
+                          aria-label="Excluir atividade"
+                          className="rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100 focus:opacity-100"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <p className="text-sm leading-relaxed text-muted-foreground">
                     {activity.description}
