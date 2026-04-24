@@ -41,6 +41,10 @@ export async function proxy(request: NextRequest) {
   if (!user && (isProtected || isOnboarding)) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
+    // Preserva o destino para que o login redirecione de volta ao convite
+    if (pathname.startsWith('/invite/')) {
+      url.searchParams.set('next', pathname)
+    }
     return NextResponse.redirect(url)
   }
 
