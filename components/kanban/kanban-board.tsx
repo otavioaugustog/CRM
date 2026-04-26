@@ -99,6 +99,8 @@ export function KanbanBoard() {
         );
       }
       toast.error(result.error);
+    } else {
+      toast.success("Negócio movido.");
     }
   }
 
