@@ -2,6 +2,7 @@
 
 import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { getActiveWorkspaceId } from '@/lib/get-workspace-id'
 import { redirect } from 'next/navigation'
 import type { Workspace, WorkspaceMemberRole } from '@/types'
@@ -20,15 +21,19 @@ function toSlug(name: string): string {
 }
 
 export async function createWorkspace(name: string): Promise<{ error: string } | never> {
+  // Verifica auth com o client normal (lê a sessão do cookie)
   const supabase = await createClient()
-
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Sessão expirada. Faça login novamente.' }
 
   const slug = toSlug(name)
 
+  // Service client para o INSERT: auth.uid() retorna NULL no contexto de
+  // Server Action, então usamos service role e inserimos o membro manualmente.
+  const service = createServiceClient()
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: ws, error } = await (supabase as any)
+  const { data: ws, error } = await (service as any)
     .from('workspaces')
     .insert({ name, slug })
     .select('id')
@@ -40,6 +45,12 @@ export async function createWorkspace(name: string): Promise<{ error: string } |
     }
     return { error: 'Erro ao criar workspace. Tente novamente.' }
   }
+
+  // Insere criador como admin (o trigger ignora quando auth.uid() é NULL)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (service as any)
+    .from('workspace_members')
+    .insert({ workspace_id: ws.id, user_id: user.id, role: 'admin' })
 
   // Seleciona o novo workspace automaticamente
   const cookieStore = await cookies()
