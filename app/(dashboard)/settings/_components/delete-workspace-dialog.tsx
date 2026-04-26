@@ -19,11 +19,13 @@ export function DeleteWorkspaceDialog({ workspaceName }: DeleteWorkspaceDialogPr
   function handleDelete() {
     startTransition(async () => {
       const result = await deleteWorkspace()
-      if (result && 'error' in result) {
+      if ('error' in result) {
         toast.error(result.error)
         setOpen(false)
+        return
       }
-      // em caso de sucesso, deleteWorkspace faz redirect
+      // Hard reload para resetar o WorkspaceSwitcher (useState não limpa em soft navigation)
+      window.location.href = '/dashboard'
     })
   }
 

@@ -234,7 +234,7 @@ export async function getMemberCount(): Promise<number> {
   return count ?? 0
 }
 
-export async function deleteWorkspace(): Promise<{ error: string } | never> {
+export async function deleteWorkspace(): Promise<{ error: string } | { ok: true }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Sessão expirada. Faça login novamente.' }
@@ -265,9 +265,9 @@ export async function deleteWorkspace(): Promise<{ error: string } | never> {
 
   if (error) return { error: 'Erro ao excluir workspace. Tente novamente.' }
 
-  // Limpa o cookie — o layout vai redirecionar para onboarding se não houver outro workspace
+  // Limpa o cookie — o cliente faz hard reload para resetar o WorkspaceSwitcher
   const cookieStore = await cookies()
   cookieStore.delete('pipeflow_workspace')
 
-  redirect('/dashboard')
+  return { ok: true }
 }
