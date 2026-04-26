@@ -1,0 +1,20 @@
+"use client";
+
+import { ThemeProvider } from "next-themes";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/sonner";
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <ThemeProvider
+      attribute="class"
+      forcedTheme="dark"
+      disableTransitionOnChange
+    >
+      <TooltipProvider delay={300}>
+        {children}
+        <Toaster richColors position="bottom-right" />
+      </TooltipProvider>
+    </ThemeProvider>
+  );
+}

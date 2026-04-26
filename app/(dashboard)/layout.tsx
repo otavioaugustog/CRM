@@ -1,18 +1,25 @@
-import { Sidebar } from "@/components/shared/sidebar";
-import { Header } from "@/components/shared/header";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { AppShell } from "@/components/shared/app-shell";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      <Sidebar />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
-      </div>
-    </div>
-  );
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
+
+  const { data: memberships } = await (supabase as any)
+    .from("workspace_members")
+    .select("workspace_id")
+    .limit(1);
+
+  if (!memberships || memberships.length === 0) {
+    redirect("/onboarding");
+  }
+
+  return <AppShell>{children}</AppShell>;
 }
