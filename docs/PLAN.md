@@ -19,8 +19,8 @@
 | 9 | Atividades — Backend ✅ | `feat/collaboration` | CRUD de atividades + RLS |
 | 10 | Dashboard — UI ✅ | `feat/dashboard-ui` | Cards de métricas e gráfico com mock |
 | 11 | Dashboard — Backend ✅ | `feat/leads-data` | Queries reais de agregação (PR #5) |
-| 12 | Workspace — UI | `feat/workspace-ui` | Switcher, settings e convite mock |
-| 13 | Workspace — Backend | `feat/workspace-backend` | Multi-workspace real + Resend + RLS |
+| 12 | Workspace — UI ✅ | `feat/workspace-ui` | Switcher, settings e convite mock |
+| 13 | Workspace — Backend ✅ | `feat/workspace-backend` | Multi-workspace real + Resend + RLS |
 | 14 | Monetização | `feat/monetization` | Stripe Checkout + webhook + planos |
 | 15 | Landing Page ✅ | `feat/landing-page` | Página pública de apresentação |
 | 16 | Polish & Deploy | `chore/deploy` | Responsividade, SEO, Vercel + Supabase Cloud |
@@ -324,22 +324,21 @@ feat: dashboard backend — métricas e funil com queries reais de agregação
 
 ---
 
-## M12 — Workspace — UI
+## M12 — Workspace — UI ✅
 
-**Branch:** `feat/workspace-ui`
+**Branch:** `feat/workspace-ui` → merged em `main`
 **Objetivo:** Interface de multi-workspace: switcher na sidebar, página de settings e fluxo de convite mock.
 
 ### Entregas
 
-- [ ] Criar `components/shared/workspace-switcher.tsx` — dropdown com lista de workspaces + "Criar workspace"
-- [ ] Integrar switcher no topo da `Sidebar`
-- [ ] Criar `app/(dashboard)/settings/page.tsx` — form de edição do workspace (nome, slug)
-- [ ] Criar `app/(dashboard)/settings/billing/page.tsx` — exibir plano atual, botão "Fazer upgrade"
-- [ ] Seção "Membros" em settings: tabela com nome, e-mail, papel (Admin/Membro) e botão remover
-- [ ] Botão "Convidar membro" abre Dialog com input de e-mail e seletor de papel
-- [ ] Criar `app/(dashboard)/invite/[token]/page.tsx` — página de aceite de convite com nome do workspace
-- [ ] Mock: aceitar convite redireciona para `/` sem lógica real
-- [ ] Criar `app/(public)/page.tsx` placeholder para a landing (será desenvolvida em M15)
+- [x] Criar `components/shared/workspace-switcher.tsx` — dropdown com lista de workspaces + "Criar workspace"
+- [x] Integrar switcher no topo da `Sidebar`
+- [x] Criar `app/(dashboard)/settings/page.tsx` — form de edição do workspace (nome, slug)
+- [x] Criar `app/(dashboard)/settings/billing/page.tsx` — exibir plano atual, botão "Fazer upgrade"
+- [x] Seção "Membros" em settings: tabela com nome, e-mail, papel (Admin/Membro) e botão remover
+- [x] Botão "Convidar membro" abre Dialog com input de e-mail e seletor de papel
+- [x] Criar `app/invite/[token]/page.tsx` — página de aceite de convite com nome do workspace
+- [x] Aceitar convite conectado ao Supabase (RPC `accept_workspace_invite`)
 
 **Commit final:**
 ```
@@ -348,24 +347,28 @@ feat: workspace UI — switcher, settings de membros e fluxo de convite (mock)
 
 ---
 
-## M13 — Workspace — Backend
+## M13 — Workspace — Backend ✅
 
-**Branch:** `feat/workspace-backend`
+**Branch:** `feat/workspace-backend` → merged em `main`
 **Objetivo:** Multi-workspace real: criar, alternar, convidar colaboradores por e-mail com Resend, RLS completo.
 
 ### Entregas
 
-- [ ] Criar migration `004_workspaces.sql`: tabelas `workspaces`, `workspace_members`, `invitations` + RLS
-- [ ] RLS: todos os dados (leads, deals, activities) filtrados por `workspace_id` do membro logado
-- [ ] Criar hook `hooks/use-workspace.ts`: `getWorkspaces`, `createWorkspace`, `switchWorkspace`
-- [ ] `WorkspaceSwitcher` carrega workspaces reais do usuário
-- [ ] "Criar workspace" → cria registro + adiciona criador como Admin
-- [ ] Instalar `resend` e criar `lib/resend/emails/invite-email.tsx` (React Email)
-- [ ] Criar `app/api/invites/route.ts` — envia e-mail de convite via Resend com link + token único
-- [ ] Página `/invite/[token]` valida token, exibe workspace, confirma aceite e cria `workspace_member`
-- [ ] Settings: remover membro deleta `workspace_member`
-- [ ] Controle de plano Free: bloquear convite se já houver 2 membros (exibir upgrade CTA)
-- [ ] Testar: criar workspace, convidar por e-mail, aceitar convite, alternar entre workspaces
+- [x] Migrations `001_workspaces.sql` + `008_workspace_invites.sql`: workspaces, workspace_members, workspace_invites + RLS
+- [x] RLS: todos os dados (leads, deals, activities) filtrados por `workspace_id` do membro logado
+- [x] `app/actions/workspace.ts`: `createWorkspace`, `fetchCurrentWorkspace`, `updateWorkspace`, `fetchWorkspaceMembers`, `removeMember`, `fetchPendingInvites`, `cancelInvite`, `getUserRole`, `getMemberCount`
+- [x] `WorkspaceSwitcher` carrega workspaces reais + troca com `router.refresh()` + dialog "Criar workspace"
+- [x] "Criar workspace" → cria registro, seta cookie automaticamente, redireciona para dashboard
+- [x] Instalar `resend` e criar `lib/resend/emails/invite-email.tsx` (React Email)
+- [x] `app/api/invites/route.ts` — valida admin, limite de plano, e-mail e papel; envia via Resend
+- [x] Página `/invite/[token]` valida token, exibe workspace, confirma aceite via RPC SECURITY DEFINER
+- [x] Settings: remover membro deleta `workspace_member`; cancelar convite exclui `workspace_invite`
+- [x] Controle de plano Free: bloquear convite se já houver 2 membros (exibir upgrade CTA)
+- [x] `get_workspace_members_with_profile()` SECURITY DEFINER para expor e-mail/nome sem acesso direto a `auth.users`
+
+**Notas:**
+- Tabela `workspace_invites` (008) substitui `invitations` (005) no fluxo de convites; `invitations` mantida por compatibilidade
+- Validação de formato de e-mail e enum de `role` adicionada no route handler
 
 **Commit final:**
 ```

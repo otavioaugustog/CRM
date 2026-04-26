@@ -1,6 +1,8 @@
 'use server'
 
+import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { getActiveWorkspaceId } from '@/lib/get-workspace-id'
 import { redirect } from 'next/navigation'
 import type { Workspace, WorkspaceMemberRole } from '@/types'
@@ -19,17 +21,23 @@ function toSlug(name: string): string {
 }
 
 export async function createWorkspace(name: string): Promise<{ error: string } | never> {
+  // Verifica auth com o client normal (lê a sessão do cookie)
   const supabase = await createClient()
-
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Sessão expirada. Faça login novamente.' }
 
   const slug = toSlug(name)
 
+  // Service client para o INSERT: auth.uid() retorna NULL no contexto de
+  // Server Action, então usamos service role e inserimos o membro manualmente.
+  const service = createServiceClient()
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase as any)
+  const { data: ws, error } = await (service as any)
     .from('workspaces')
     .insert({ name, slug })
+    .select('id')
+    .single()
 
   if (error) {
     if (error.code === '23505') {
@@ -37,6 +45,20 @@ export async function createWorkspace(name: string): Promise<{ error: string } |
     }
     return { error: 'Erro ao criar workspace. Tente novamente.' }
   }
+
+  // Insere criador como admin (o trigger ignora quando auth.uid() é NULL)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (service as any)
+    .from('workspace_members')
+    .insert({ workspace_id: ws.id, user_id: user.id, role: 'admin' })
+
+  // Seleciona o novo workspace automaticamente
+  const cookieStore = await cookies()
+  cookieStore.set('pipeflow_workspace', ws.id, {
+    path: '/',
+    maxAge: 60 * 60 * 24 * 30,
+    sameSite: 'lax',
+  })
 
   redirect('/dashboard')
 }
@@ -210,4 +232,42 @@ export async function getMemberCount(): Promise<number> {
     .eq('workspace_id', workspaceId)
 
   return count ?? 0
+}
+
+export async function deleteWorkspace(): Promise<{ error: string } | { ok: true }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Sessão expirada. Faça login novamente.' }
+
+  const workspaceId = await getActiveWorkspaceId()
+  if (!workspaceId) return { error: 'Workspace não encontrado.' }
+
+  // Verifica que o usuário é admin antes de deletar
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: membership } = await (supabase as any)
+    .from('workspace_members')
+    .select('role')
+    .eq('workspace_id', workspaceId)
+    .eq('user_id', user.id)
+    .single()
+
+  if (membership?.role !== 'admin') {
+    return { error: 'Apenas admins podem excluir o workspace.' }
+  }
+
+  // Service client: auth.uid() é NULL no contexto de Server Action
+  const service = createServiceClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (service as any)
+    .from('workspaces')
+    .delete()
+    .eq('id', workspaceId)
+
+  if (error) return { error: 'Erro ao excluir workspace. Tente novamente.' }
+
+  // Limpa o cookie — o cliente faz hard reload para resetar o WorkspaceSwitcher
+  const cookieStore = await cookies()
+  cookieStore.delete('pipeflow_workspace')
+
+  return { ok: true }
 }
