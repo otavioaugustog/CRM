@@ -8,6 +8,7 @@ import {
 } from '@/app/actions/workspace'
 import { WorkspaceSettingsForm } from './_components/workspace-settings-form'
 import { MembersSection } from './_components/members-section'
+import { DeleteWorkspaceDialog } from './_components/delete-workspace-dialog'
 
 export const metadata = { title: 'Configurações — PipeFlow CRM' }
 
@@ -68,6 +69,17 @@ export default async function SettingsPage() {
           </a>
         </div>
       </section>
+
+      {isAdmin && (
+        <section className="rounded-xl border border-destructive/30 bg-card p-6 shadow-sm">
+          <h2 className="mb-1 text-base font-semibold text-destructive">Zona de perigo</h2>
+          <p className="mb-4 text-sm text-muted-foreground">
+            Excluir o workspace remove permanentemente todos os leads, negócios, atividades e membros.
+            Esta ação não pode ser desfeita.
+          </p>
+          <DeleteWorkspaceDialog workspaceName={workspace.name} />
+        </section>
+      )}
     </div>
   )
 }

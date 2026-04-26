@@ -233,3 +233,41 @@ export async function getMemberCount(): Promise<number> {
 
   return count ?? 0
 }
+
+export async function deleteWorkspace(): Promise<{ error: string } | never> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Sessão expirada. Faça login novamente.' }
+
+  const workspaceId = await getActiveWorkspaceId()
+  if (!workspaceId) return { error: 'Workspace não encontrado.' }
+
+  // Verifica que o usuário é admin antes de deletar
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: membership } = await (supabase as any)
+    .from('workspace_members')
+    .select('role')
+    .eq('workspace_id', workspaceId)
+    .eq('user_id', user.id)
+    .single()
+
+  if (membership?.role !== 'admin') {
+    return { error: 'Apenas admins podem excluir o workspace.' }
+  }
+
+  // Service client: auth.uid() é NULL no contexto de Server Action
+  const service = createServiceClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (service as any)
+    .from('workspaces')
+    .delete()
+    .eq('id', workspaceId)
+
+  if (error) return { error: 'Erro ao excluir workspace. Tente novamente.' }
+
+  // Limpa o cookie — o layout vai redirecionar para onboarding se não houver outro workspace
+  const cookieStore = await cookies()
+  cookieStore.delete('pipeflow_workspace')
+
+  redirect('/dashboard')
+}
