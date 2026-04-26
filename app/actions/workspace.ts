@@ -2,7 +2,6 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { getActiveWorkspaceId } from '@/lib/get-workspace-id'
-import { redirect } from 'next/navigation'
 import type { Workspace, WorkspaceMemberRole } from '@/types'
 
 function toSlug(name: string): string {
@@ -18,7 +17,7 @@ function toSlug(name: string): string {
   )
 }
 
-export async function createWorkspace(name: string): Promise<{ error: string } | never> {
+export async function createWorkspace(name: string): Promise<{ error: string } | { workspace: Workspace }> {
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -27,9 +26,11 @@ export async function createWorkspace(name: string): Promise<{ error: string } |
   const slug = toSlug(name)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase as any)
+  const { data, error } = await (supabase as any)
     .from('workspaces')
     .insert({ name, slug })
+    .select()
+    .single()
 
   if (error) {
     if (error.code === '23505') {
@@ -38,7 +39,7 @@ export async function createWorkspace(name: string): Promise<{ error: string } |
     return { error: 'Erro ao criar workspace. Tente novamente.' }
   }
 
-  redirect('/dashboard')
+  return { workspace: data as Workspace }
 }
 
 export async function fetchCurrentWorkspace(): Promise<Workspace | null> {

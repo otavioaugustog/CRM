@@ -12,13 +12,13 @@ import {
   AtSign,
   Plus,
   Trash2,
+  Loader2,
 } from "lucide-react";
 import type { Activity, ActivityType } from "@/types";
 import { cn, formatRelativeDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -63,18 +63,9 @@ const ACTIVITY_CONFIG: Record<
   },
 };
 
-const todayISO = () => new Date().toISOString().slice(0, 10);
-
 const schema = z.object({
   type: z.enum(["call", "email", "meeting", "note"] as const),
-  description: z.string().min(1, "Descrição obrigatória"),
-  date: z
-    .string()
-    .optional()
-    .refine(
-      (v) => !v || new Date(v) <= new Date(todayISO()),
-      "A data não pode ser no futuro"
-    ),
+  description: z.string().min(1, "Descrição obrigatória").max(2000, "Máximo de 2000 caracteres"),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -93,7 +84,7 @@ export function LeadActivityTimeline({
   const [activities, setActivities] = useState<Activity[]>(initialActivities);
   const [open, setOpen] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [isCreating, startCreateTransition] = useTransition();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
 
@@ -126,7 +117,7 @@ export function LeadActivityTimeline({
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { type: "call", description: "", date: todayISO() },
+    defaultValues: { type: "call", description: "" },
   });
 
   function handleDelete(id: string) {
@@ -134,8 +125,7 @@ export function LeadActivityTimeline({
     setDeletingId(id);
     setActivities((prev) => prev.filter((a) => a.id !== id));
 
-    startTransition(async () => {
-      const result = await deleteActivity(id);
+    deleteActivity(id).then((result) => {
       if (!result.success && toRestore) {
         setActivities((prev) =>
           [...prev, toRestore].sort(
@@ -154,7 +144,7 @@ export function LeadActivityTimeline({
   }
 
   function handleOpen() {
-    reset({ type: "call", description: "", date: todayISO() });
+    reset({ type: "call", description: "" });
     setServerError(null);
     setOpen(true);
   }
@@ -169,14 +159,14 @@ export function LeadActivityTimeline({
       lead_id: leadId,
       type: data.type,
       description: data.description,
-      author_id: "",
+      author_id: currentUserId,
       created_at: new Date().toISOString(),
     };
 
     setActivities((prev) => [optimisticItem, ...prev]);
     setOpen(false);
 
-    startTransition(async () => {
+    startCreateTransition(async () => {
       const result = await createActivity({
         leadId,
         type: data.type,
@@ -186,11 +176,15 @@ export function LeadActivityTimeline({
       if (!result.success) {
         setActivities((prev) => prev.filter((a) => a.id !== tempId));
         setServerError(result.error ?? "Erro ao registrar atividade");
+        reset(data);
         setOpen(true);
         return;
       }
 
       if (result.activity) {
+        // Replace optimistic item with real one before broadcasting to avoid
+        // self-deduplication race: the channel receives our own broadcast and
+        // the real ID must already be in state when dedup runs.
         setActivities((prev) =>
           prev.map((a) => (a.id === tempId ? result.activity! : a))
         );
@@ -256,9 +250,13 @@ export function LeadActivityTimeline({
                           onClick={() => handleDelete(activity.id)}
                           disabled={deletingId === activity.id}
                           aria-label="Excluir atividade"
-                          className="rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100 focus:opacity-100"
+                          className="rounded p-0.5 text-muted-foreground/50 transition-colors hover:text-destructive focus-visible:text-destructive sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          {deletingId === activity.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3.5 w-3.5" />
+                          )}
                         </button>
                       )}
                     </div>
@@ -290,10 +288,10 @@ export function LeadActivityTimeline({
                 name="type"
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger id="activity-type" className="w-full">
+                    <SelectTrigger id="activity-type" className="w-full text-base sm:text-sm">
                       <SelectValue placeholder="Selecione o tipo" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent alignItemWithTrigger={false}>
                       <SelectItem value="call">Ligação</SelectItem>
                       <SelectItem value="email">E-mail</SelectItem>
                       <SelectItem value="meeting">Reunião</SelectItem>
@@ -320,20 +318,6 @@ export function LeadActivityTimeline({
               )}
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="date">Data</Label>
-              <Input
-                id="date"
-                type="date"
-                max={todayISO()}
-                aria-invalid={!!errors.date}
-                {...register("date")}
-              />
-              {errors.date && (
-                <p className="text-xs text-destructive">{errors.date.message}</p>
-              )}
-            </div>
-
             {serverError && (
               <p className="text-xs text-destructive">{serverError}</p>
             )}
@@ -343,12 +327,19 @@ export function LeadActivityTimeline({
                 type="button"
                 variant="outline"
                 onClick={() => setOpen(false)}
-                disabled={isPending}
+                disabled={isCreating}
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isPending}>
-                {isPending ? "Salvando…" : "Salvar"}
+              <Button type="submit" disabled={isCreating}>
+                {isCreating ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Salvando…
+                  </>
+                ) : (
+                  "Salvar"
+                )}
               </Button>
             </DialogFooter>
           </form>

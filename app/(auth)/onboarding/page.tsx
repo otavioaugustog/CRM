@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -20,6 +21,7 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export default function OnboardingPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -35,11 +37,13 @@ export default function OnboardingPage() {
 
     const result = await createWorkspace(data.workspaceName);
 
-    if (result?.error) {
+    if ('error' in result) {
       setServerError(result.error);
       setLoading(false);
+      return;
     }
-    // em sucesso: createWorkspace chama redirect('/dashboard') no servidor
+
+    router.push('/dashboard');
   }
 
   return (

@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Check, ChevronsUpDown, Plus } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Check, ChevronsUpDown, Plus, Loader2 } from "lucide-react";
 import { cn, getInitials } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,8 +17,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { createClient } from "@/lib/supabase/client";
+import { createWorkspace } from "@/app/actions/workspace";
 import type { Workspace } from "@/types";
 
 const STORAGE_KEY = "pipeflow:workspace";
@@ -31,8 +43,14 @@ interface WorkspaceSwitcherProps {
 }
 
 export function WorkspaceSwitcher({ onPlanChange }: WorkspaceSwitcherProps) {
+  const router = useRouter();
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [current, setCurrent] = useState<Workspace | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -67,6 +85,35 @@ export function WorkspaceSwitcher({ onPlanChange }: WorkspaceSwitcherProps) {
     onPlanChange?.(ws.plan ?? "free");
   }
 
+  function openCreateDialog() {
+    setNewName("");
+    setCreateError(null);
+    setDialogOpen(true);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    const name = newName.trim();
+    if (!name) return;
+
+    setCreating(true);
+    setCreateError(null);
+    const result = await createWorkspace(name);
+    setCreating(false);
+
+    if ("error" in result) {
+      setCreateError(result.error);
+      return;
+    }
+
+    const ws = result.workspace;
+    setWorkspaces((prev) => [...prev, ws]);
+    switchWorkspace(ws);
+    setDialogOpen(false);
+    router.refresh();
+  }
+
   if (!current) {
     return (
       <div className="flex h-10 w-full items-center gap-2 rounded-lg px-2 py-2">
@@ -77,6 +124,7 @@ export function WorkspaceSwitcher({ onPlanChange }: WorkspaceSwitcherProps) {
   }
 
   return (
+    <>
     <DropdownMenu>
       <DropdownMenuTrigger className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left transition-colors hover:bg-sidebar-accent focus-visible:outline-none">
         <Avatar className="h-7 w-7 shrink-0 rounded-md">
@@ -135,7 +183,7 @@ export function WorkspaceSwitcher({ onPlanChange }: WorkspaceSwitcherProps) {
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuItem className="gap-2 text-muted-foreground">
+        <DropdownMenuItem className="gap-2 text-muted-foreground" onClick={openCreateDialog}>
           <div className="flex h-6 w-6 items-center justify-center rounded-md border border-dashed border-border">
             <Plus className="h-3.5 w-3.5" />
           </div>
@@ -143,5 +191,42 @@ export function WorkspaceSwitcher({ onPlanChange }: WorkspaceSwitcherProps) {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Novo workspace</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleCreate} className="flex flex-col gap-4 pt-2">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="ws-name">Nome *</Label>
+            <Input
+              id="ws-name"
+              ref={inputRef}
+              placeholder="Ex: Minha Empresa"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              disabled={creating}
+            />
+            {createError && (
+              <p className="text-xs text-destructive">{createError}</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button type="submit" disabled={creating || !newName.trim()} className="w-full">
+              {creating ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Criando…
+                </>
+              ) : (
+                "Criar workspace"
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

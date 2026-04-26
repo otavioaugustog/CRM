@@ -36,8 +36,9 @@ export async function createActivity(
   const data = parsed.data
 
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { success: false, error: 'Não autenticado' }
+  const { data: authData, error: authError } = await supabase.auth.getUser()
+  if (authError || !authData.user) return { success: false, error: 'Não autenticado' }
+  const user = authData.user
 
   const workspaceId = await getActiveWorkspaceId()
   if (!workspaceId) return { success: false, error: 'Workspace não encontrado' }
@@ -74,8 +75,12 @@ export async function deleteActivity(
   id: string
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { success: false, error: 'Não autenticado' }
+  const { data: authData, error: authError } = await supabase.auth.getUser()
+  if (authError || !authData.user) return { success: false, error: 'Não autenticado' }
+  const user = authData.user
+
+  const workspaceId = await getActiveWorkspaceId()
+  if (!workspaceId) return { success: false, error: 'Workspace não encontrado' }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase as any)
@@ -83,6 +88,7 @@ export async function deleteActivity(
     .delete()
     .eq('id', id)
     .eq('author_id', user.id)
+    .eq('workspace_id', workspaceId)
 
   if (error) return { success: false, error: error.message }
   return { success: true }
