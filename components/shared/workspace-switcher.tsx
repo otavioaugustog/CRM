@@ -23,6 +23,11 @@ const STORAGE_KEY = "pipeflow:workspace";
 const COOKIE_KEY = "pipeflow_workspace";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 dias
 
+function readWorkspaceCookie(): string | null {
+  const match = document.cookie.match(/(?:^|;\s*)pipeflow_workspace=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 function persistWorkspace(id: string) {
   localStorage.setItem(STORAGE_KEY, id);
   document.cookie = `${COOKIE_KEY}=${id}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
@@ -57,7 +62,8 @@ export function WorkspaceSwitcher({ onPlanChange }: WorkspaceSwitcherProps) {
 
       setWorkspaces(data);
 
-      const savedId = localStorage.getItem(STORAGE_KEY);
+      // Cookie tem prioridade: pode ter sido atualizado pelo servidor (ex: criação de workspace)
+      const savedId = readWorkspaceCookie() ?? localStorage.getItem(STORAGE_KEY);
       const saved = savedId ? data.find((w) => w.id === savedId) : null;
       const active = saved ?? data[0];
       setCurrent(active);
