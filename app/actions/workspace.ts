@@ -1,5 +1,6 @@
 'use server'
 
+import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { getActiveWorkspaceId } from '@/lib/get-workspace-id'
 import { redirect } from 'next/navigation'
@@ -27,9 +28,11 @@ export async function createWorkspace(name: string): Promise<{ error: string } |
   const slug = toSlug(name)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase as any)
+  const { data: ws, error } = await (supabase as any)
     .from('workspaces')
     .insert({ name, slug })
+    .select('id')
+    .single()
 
   if (error) {
     if (error.code === '23505') {
@@ -37,6 +40,14 @@ export async function createWorkspace(name: string): Promise<{ error: string } |
     }
     return { error: 'Erro ao criar workspace. Tente novamente.' }
   }
+
+  // Seleciona o novo workspace automaticamente
+  const cookieStore = await cookies()
+  cookieStore.set('pipeflow_workspace', ws.id, {
+    path: '/',
+    maxAge: 60 * 60 * 24 * 30,
+    sameSite: 'lax',
+  })
 
   redirect('/dashboard')
 }

@@ -54,6 +54,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'E-mail e papel são obrigatórios.' }, { status: 400 })
   }
 
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return NextResponse.json({ error: 'Formato de e-mail inválido.' }, { status: 400 })
+  }
+
+  if (role !== 'admin' && role !== 'member') {
+    return NextResponse.json({ error: 'Papel inválido.' }, { status: 400 })
+  }
+
   // Verifica se a pessoa já é membro
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: existingUser } = await (supabase as any).rpc('get_workspace_members_with_profile', {
