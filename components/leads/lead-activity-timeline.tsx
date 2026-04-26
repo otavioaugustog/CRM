@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/dialog";
 import { createActivity, deleteActivity } from "@/app/actions/activities";
 import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 
 const ACTIVITY_CONFIG: Record<
   ActivityType,
@@ -142,7 +143,9 @@ export function LeadActivityTimeline({
             (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
           )
         );
+        toast.error(result.error ?? "Erro ao excluir atividade.");
       } else if (result.success) {
+        toast.error("Atividade excluída.");
         channelRef.current?.send({
           type: "broadcast",
           event: "activity_deleted",
@@ -186,6 +189,7 @@ export function LeadActivityTimeline({
       if (!result.success) {
         setActivities((prev) => prev.filter((a) => a.id !== tempId));
         setServerError(result.error ?? "Erro ao registrar atividade");
+        toast.error(result.error ?? "Erro ao registrar atividade.");
         setOpen(true);
         return;
       }
@@ -194,6 +198,7 @@ export function LeadActivityTimeline({
         setActivities((prev) =>
           prev.map((a) => (a.id === tempId ? result.activity! : a))
         );
+        toast.success("Atividade registrada.");
         channelRef.current?.send({
           type: "broadcast",
           event: "activity_inserted",
