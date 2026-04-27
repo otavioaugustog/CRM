@@ -21,5 +21,5 @@ export default async function DashboardLayout({
     redirect("/onboarding");
   }
 
-  return <AppShell>{children}</AppShell>;
+  return <AppShell user={user}>{children}</AppShell>;
 }

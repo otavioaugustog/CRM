@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { Menu } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { createClient } from "@/lib/supabase/client";
 import { signOut } from "@/app/actions/auth";
 import { getInitials } from "@/lib/utils";
 import type { User } from "@supabase/supabase-js";
@@ -37,21 +36,18 @@ function usePageTitle() {
 }
 
 interface HeaderProps {
+  user: User;
   onMenuClick?: () => void;
 }
 
-export function Header({ onMenuClick }: HeaderProps) {
+export function Header({ user, onMenuClick }: HeaderProps) {
   const title = usePageTitle();
-  const [user, setUser] = useState<User | null>(null);
 
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => setUser(data.user));
-  }, []);
-
-  const displayName: string = user?.user_metadata?.name ?? user?.email ?? "";
+  const rawName: string = user.user_metadata?.name ?? "";
+  const displayName = rawName || user.email || "";
   const initials = displayName ? getInitials(displayName) : "?";
-  const firstName = displayName.split(" ")[0] || "";
+  // Só exibe primeiro nome quando vem de metadata real (não é um e-mail)
+  const firstName = rawName ? rawName.split(" ")[0] : "";
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-border bg-card px-4">
@@ -74,7 +70,10 @@ export function Header({ onMenuClick }: HeaderProps) {
         <NotificationBell />
 
         <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-secondary focus-visible:outline-none">
+          <DropdownMenuTrigger
+            aria-label="Menu do usuário"
+            className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-secondary focus-visible:outline-none"
+          >
             <Avatar className="h-7 w-7">
               <AvatarFallback className="bg-primary text-primary-foreground text-xs font-bold">
                 {initials}
@@ -91,17 +90,21 @@ export function Header({ onMenuClick }: HeaderProps) {
               {displayName && (
                 <p className="text-sm font-medium text-foreground">{displayName}</p>
               )}
-              {user?.email && (
+              {user.email && displayName !== user.email && (
                 <p className="text-xs text-muted-foreground">{user.email}</p>
               )}
             </div>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Perfil</DropdownMenuItem>
-            <DropdownMenuItem>Configurações</DropdownMenuItem>
+            <DropdownMenuItem disabled>
+              Perfil
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Link href="/settings" className="w-full">Configurações</Link>
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
-              onClick={() => signOut()}
+              onClick={async () => { await signOut(); }}
             >
               Sair
             </DropdownMenuItem>

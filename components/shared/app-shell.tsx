@@ -4,8 +4,14 @@ import { useState } from "react";
 import { Sidebar } from "@/components/shared/sidebar";
 import { Header } from "@/components/shared/header";
 import { MobileNav } from "@/components/shared/mobile-nav";
+import type { User } from "@supabase/supabase-js";
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+interface AppShellProps {
+  children: React.ReactNode;
+  user: User;
+}
+
+export function AppShell({ children, user }: AppShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -19,7 +25,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <MobileNav open={mobileOpen} onOpenChange={setMobileOpen} />
 
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Header onMenuClick={() => setMobileOpen(true)} />
+        <Header user={user} onMenuClick={() => setMobileOpen(true)} />
         <main className="flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
       </div>
     </div>
