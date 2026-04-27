@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AppShell } from "@/components/shared/app-shell";
+import { fetchCurrentWorkspace } from "@/app/actions/workspace";
 
 export default async function DashboardLayout({
   children,
@@ -21,5 +22,7 @@ export default async function DashboardLayout({
     redirect("/onboarding");
   }
 
-  return <AppShell user={user}>{children}</AppShell>;
+  const workspace = await fetchCurrentWorkspace();
+
+  return <AppShell user={user} plan={workspace?.plan}>{children}</AppShell>;
 }
