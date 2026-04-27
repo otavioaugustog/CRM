@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Menu } from "lucide-react";
@@ -34,7 +35,7 @@ function usePageTitle() {
   const pathname = usePathname();
   const sorted = Object.entries(PAGE_TITLES).sort((a, b) => b[0].length - a[0].length);
   for (const [path, title] of sorted) {
-    if (pathname.startsWith(path)) return title;
+    if (pathname === path || pathname.startsWith(path + "/")) return title;
   }
   return "Dashboard";
 }
@@ -57,7 +58,14 @@ export function Header({ user, plan, onMenuClick }: HeaderProps) {
 
   async function handleSignOut() {
     setSigningOut(true);
-    await signOut();
+    try {
+      await signOut();
+    } catch (e: unknown) {
+      // Next.js redirect() throws a special error — let it propagate
+      if (e && typeof e === "object" && "digest" in e) throw e;
+      setSigningOut(false);
+      toast.error("Erro ao sair. Tente novamente.");
+    }
   }
 
   return (

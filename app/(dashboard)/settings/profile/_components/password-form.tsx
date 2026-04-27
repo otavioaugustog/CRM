@@ -9,8 +9,7 @@ import { updatePassword } from '@/app/actions/auth'
 
 const schema = z
   .object({
-    currentPassword: z.string().min(1, 'Informe a senha atual.'),
-    newPassword: z.string().min(8, 'Nova senha deve ter ao menos 8 caracteres.'),
+    newPassword: z.string().min(8, 'Nova senha deve ter ao menos 8 caracteres.').max(128),
     confirmPassword: z.string().min(1, 'Confirme a nova senha.'),
   })
   .refine((d) => d.newPassword === d.confirmPassword, {
@@ -29,7 +28,7 @@ export function PasswordForm() {
 
   async function onSubmit(values: FormValues) {
     setIsPending(true)
-    const result = await updatePassword(values.currentPassword, values.newPassword)
+    const result = await updatePassword(values.newPassword)
     setIsPending(false)
     if (result.error) {
       toast.error(result.error)
@@ -41,22 +40,6 @@ export function PasswordForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="space-y-1">
-        <label className="text-sm font-medium text-foreground" htmlFor="current-password">
-          Senha atual
-        </label>
-        <input
-          id="current-password"
-          type="password"
-          autoComplete="current-password"
-          {...register('currentPassword')}
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-        />
-        {errors.currentPassword && (
-          <p className="text-xs text-destructive">{errors.currentPassword.message}</p>
-        )}
-      </div>
-
       <div className="space-y-1">
         <label className="text-sm font-medium text-foreground" htmlFor="new-password">
           Nova senha

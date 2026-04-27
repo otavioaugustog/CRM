@@ -13,16 +13,9 @@ export default async function DashboardLayout({
 
   if (!user) redirect("/login");
 
-  const { data: memberships } = await (supabase as any)
-    .from("workspace_members")
-    .select("workspace_id")
-    .limit(1);
-
-  if (!memberships || memberships.length === 0) {
-    redirect("/onboarding");
-  }
-
+  // RLS garante que fetchCurrentWorkspace retorna null quando não há membership
   const workspace = await fetchCurrentWorkspace();
+  if (!workspace) redirect("/onboarding");
 
-  return <AppShell user={user} plan={workspace?.plan}>{children}</AppShell>;
+  return <AppShell user={user} plan={workspace.plan}>{children}</AppShell>;
 }

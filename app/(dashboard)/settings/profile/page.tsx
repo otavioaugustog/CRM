@@ -13,6 +13,10 @@ export default async function ProfilePage() {
   const name: string = user.user_metadata?.name ?? ''
   const email = user.email ?? ''
 
+  // OAuth users (Google, GitHub…) have no Supabase-managed password
+  const provider: string = user.app_metadata?.provider ?? 'email'
+  const isEmailUser = provider === 'email'
+
   return (
     <div className="mx-auto max-w-2xl space-y-6 px-4 py-8">
       <div>
@@ -29,13 +33,23 @@ export default async function ProfilePage() {
         <ProfileForm name={name} />
       </section>
 
-      <section className="rounded-xl border border-border bg-card p-6 shadow-sm">
-        <h2 className="mb-1 text-base font-semibold text-foreground">Segurança</h2>
-        <p className="mb-4 text-sm text-muted-foreground">
-          Para alterar sua senha, confirme a senha atual primeiro.
-        </p>
-        <PasswordForm />
-      </section>
+      {isEmailUser ? (
+        <section className="rounded-xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="mb-1 text-base font-semibold text-foreground">Segurança</h2>
+          <p className="mb-4 text-sm text-muted-foreground">
+            Escolha uma senha com ao menos 8 caracteres.
+          </p>
+          <PasswordForm />
+        </section>
+      ) : (
+        <section className="rounded-xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="mb-1 text-base font-semibold text-foreground">Segurança</h2>
+          <p className="text-sm text-muted-foreground">
+            Sua conta usa login via <span className="font-medium capitalize text-foreground">{provider}</span>.
+            A senha é gerenciada pelo provedor externo.
+          </p>
+        </section>
+      )}
     </div>
   )
 }

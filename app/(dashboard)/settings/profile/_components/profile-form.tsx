@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -8,7 +9,10 @@ import { toast } from 'sonner'
 import { updateProfile } from '@/app/actions/auth'
 
 const schema = z.object({
-  name: z.string().min(2, 'Nome deve ter ao menos 2 caracteres.').max(80),
+  name: z
+    .string()
+    .min(2, 'Nome deve ter ao menos 2 caracteres.')
+    .max(80, 'Nome deve ter no máximo 80 caracteres.'),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -18,9 +22,10 @@ interface ProfileFormProps {
 }
 
 export function ProfileForm({ name }: ProfileFormProps) {
+  const router = useRouter()
   const [isPending, setIsPending] = useState(false)
 
-  const { register, handleSubmit, formState: { errors, isDirty } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, formState: { errors, isDirty } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { name },
   })
@@ -29,8 +34,13 @@ export function ProfileForm({ name }: ProfileFormProps) {
     setIsPending(true)
     const result = await updateProfile(values.name)
     setIsPending(false)
-    if (result.error) toast.error(result.error)
-    else toast.success('Perfil atualizado.')
+    if (result.error) {
+      toast.error(result.error)
+    } else {
+      toast.success('Perfil atualizado.')
+      reset({ name: values.name })
+      router.refresh()
+    }
   }
 
   return (
