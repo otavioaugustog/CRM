@@ -1,4 +1,5 @@
-import { BarChart3, DollarSign, Percent, Users } from "lucide-react";
+import { BarChart3, DollarSign, Percent, TrendingDown, TrendingUp, Users } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cookies } from "next/headers";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { FunnelChart, type FunnelStage } from "@/components/dashboard/funnel-chart";
@@ -42,7 +43,7 @@ async function getDashboardData() {
   await cookies();
   const workspaceId = await getActiveWorkspaceId();
   if (!workspaceId) {
-    return { totalLeads: 0, openDeals: 0, pipelineValue: 0, conversionRate: 0, funnelStages: [], upcomingDeals: [] };
+    return { totalLeads: 0, openDeals: 0, pipelineValue: 0, wonValue: 0, lostValue: 0, conversionRate: 0, funnelStages: [], upcomingDeals: [] };
   }
 
   const supabase = await createClient();
@@ -73,6 +74,8 @@ async function getDashboardData() {
   const closedLost = deals.filter((d) => d.stage === "fechado_perdido");
 
   const pipelineValue = openDeals.reduce((sum, d) => sum + d.value, 0);
+  const wonValue = closedWon.reduce((sum, d) => sum + d.value, 0);
+  const lostValue = closedLost.reduce((sum, d) => sum + d.value, 0);
 
   const conversionDenominator = closedWon.length + closedLost.length;
   const conversionRate =
@@ -126,6 +129,8 @@ async function getDashboardData() {
     totalLeads: totalLeads ?? 0,
     openDeals: openDeals.length,
     pipelineValue,
+    wonValue,
+    lostValue,
     conversionRate,
     funnelStages,
     upcomingDeals,
@@ -133,7 +138,7 @@ async function getDashboardData() {
 }
 
 export default async function DashboardPage() {
-  const { totalLeads, openDeals, pipelineValue, conversionRate, funnelStages, upcomingDeals } =
+  const { totalLeads, openDeals, pipelineValue, wonValue, lostValue, conversionRate, funnelStages, upcomingDeals } =
     await getDashboardData();
 
   const metrics = [
@@ -176,10 +181,34 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {metrics.map((m) => (
           <MetricCard key={m.title} {...m} />
         ))}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Negócios Fechados
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-1 mb-1">
+                <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
+                <span className="text-xs text-muted-foreground">Ganho</span>
+              </div>
+              <p className="text-lg font-bold text-emerald-500">{formatCurrency(wonValue)}</p>
+            </div>
+            <div className="w-px bg-border" />
+            <div className="flex-1">
+              <div className="flex items-center gap-1 mb-1">
+                <TrendingDown className="h-3.5 w-3.5 text-rose-500" />
+                <span className="text-xs text-muted-foreground">Perdido</span>
+              </div>
+              <p className="text-lg font-bold text-rose-500">{formatCurrency(lostValue)}</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
