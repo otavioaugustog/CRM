@@ -7,12 +7,11 @@ export async function getActiveWorkspaceId(): Promise<string | null> {
   if (fromCookie) return fromCookie
 
   const supabase = await createClient()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data } = await (supabase as any)
-    .from('workspaces')
-    .select('id')
+  const { data } = await supabase
+    .from('workspace_members')
+    .select('workspace_id')
     .limit(1)
     .single()
 
-  return data?.id ?? null
+  return data?.workspace_id ?? null
 }

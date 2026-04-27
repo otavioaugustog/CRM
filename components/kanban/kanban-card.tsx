@@ -1,22 +1,26 @@
 "use client";
 
-import { CalendarIcon, AlertTriangleIcon } from "lucide-react";
+import { CalendarIcon, AlertTriangleIcon, MoreHorizontalIcon, PencilIcon, Trash2Icon } from "lucide-react";
 import { cn, formatCurrency, getInitials } from "@/lib/utils";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { Deal, DealStage, Lead } from "@/types";
 
-// Left border color per stage
 const STAGE_BORDER_COLOR: Record<DealStage, string> = {
-  novo_lead: "#94a3b8",        // slate-400
-  contato_realizado: "#60a5fa", // blue-400
-  proposta_enviada: "#8b5cf6",  // violet-500
-  negociacao: "#f59e0b",        // amber-500
-  fechado_ganho: "#10b981",     // emerald-500
-  fechado_perdido: "#f43f5e",   // rose-500
+  novo_lead: "#94a3b8",
+  contato_realizado: "#60a5fa",
+  proposta_enviada: "#8b5cf6",
+  negociacao: "#f59e0b",
+  fechado_ganho: "#10b981",
+  fechado_perdido: "#f43f5e",
 };
 
-// Avatar background color per stage (lighter tones)
 const AVATAR_BG_COLOR: Record<DealStage, string> = {
   novo_lead: "#e2e8f0",
   contato_realizado: "#dbeafe",
@@ -30,6 +34,8 @@ interface KanbanCardProps {
   deal: Deal;
   lead: Lead | undefined;
   isDragging?: boolean;
+  onEdit: (deal: Deal) => void;
+  onDelete: (id: string) => void;
 }
 
 function getDueDateStatus(dueDateStr: string | undefined): "ok" | "warning" | "overdue" | null {
@@ -54,7 +60,7 @@ function formatDueDate(dueDateStr: string): string {
   }).format(date);
 }
 
-export function KanbanCard({ deal, lead, isDragging = false }: KanbanCardProps) {
+export function KanbanCard({ deal, lead, isDragging = false, onEdit, onDelete }: KanbanCardProps) {
   const dueDateStatus = getDueDateStatus(deal.due_date);
   const borderColor = STAGE_BORDER_COLOR[deal.stage];
   const avatarBg = AVATAR_BG_COLOR[deal.stage];
@@ -69,10 +75,39 @@ export function KanbanCard({ deal, lead, isDragging = false }: KanbanCardProps) 
       )}
       style={{ borderLeft: `3px solid ${borderColor}` }}
     >
-      {/* Title */}
-      <p className="text-sm font-semibold text-foreground truncate leading-snug mb-2">
-        {deal.title}
-      </p>
+      {/* Title row with menu */}
+      <div className="flex items-start justify-between gap-1 mb-2">
+        <p className="text-sm font-semibold text-foreground leading-snug line-clamp-2 flex-1">
+          {deal.title}
+        </p>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            className="inline-flex size-6 shrink-0 -mr-1 -mt-0.5 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+            aria-label="Ações do negócio"
+          >
+            <MoreHorizontalIcon className="size-3.5" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-36">
+            <DropdownMenuItem
+              onClick={() => onEdit(deal)}
+              className="gap-2 cursor-pointer"
+            >
+              <PencilIcon className="size-3.5" />
+              Editar
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => onDelete(deal.id)}
+              className="gap-2 cursor-pointer text-destructive focus:text-destructive"
+            >
+              <Trash2Icon className="size-3.5" />
+              Excluir
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
       {/* Lead row */}
       <div className="flex items-center gap-1.5 mb-2.5">

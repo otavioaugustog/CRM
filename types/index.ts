@@ -26,7 +26,7 @@ export interface Deal {
   id: string;
   workspace_id: string;
   title: string;
-  lead_id: string;
+  lead_id: string | null;
   stage: DealStage;
   value: number;
   owner_id: string;

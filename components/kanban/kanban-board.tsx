@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -14,11 +14,11 @@ import {
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { toast } from "sonner";
+import { AlertCircleIcon } from "lucide-react";
 import { KanbanColumn } from "./kanban-column";
 import { KanbanDragOverlay } from "./kanban-drag-overlay";
 import { DealForm } from "@/components/leads/deal-form";
-import { fetchDeals, createDeal, moveDeal } from "@/app/actions/deals";
-import { fetchLeads } from "@/app/actions/leads";
+import { createDeal, updateDeal, moveDeal, deleteDeal } from "@/app/actions/deals";
 import type { Deal, DealStage, Lead } from "@/types";
 
 const STAGES: DealStage[] = [
@@ -30,23 +30,20 @@ const STAGES: DealStage[] = [
   "fechado_perdido",
 ];
 
-export function KanbanBoard() {
-  const [deals, setDeals] = useState<Deal[]>([]);
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [loading, setLoading] = useState(true);
+interface KanbanBoardProps {
+  initialDeals: Deal[];
+  initialLeads: Lead[];
+  fetchError?: string;
+}
+
+export function KanbanBoard({ initialDeals, initialLeads, fetchError }: KanbanBoardProps) {
+  const [deals, setDeals] = useState<Deal[]>(initialDeals);
+  const leads = initialLeads;
+
   const [activeId, setActiveId] = useState<string | null>(null);
   const [addingToStage, setAddingToStage] = useState<DealStage | null>(null);
+  const [editingDeal, setEditingDeal] = useState<Deal | null>(null);
   const previousStageRef = useRef<DealStage | null>(null);
-
-  useEffect(() => {
-    async function load() {
-      const [dealsData, leadsData] = await Promise.all([fetchDeals(), fetchLeads()]);
-      setDeals(dealsData);
-      setLeads(leadsData);
-      setLoading(false);
-    }
-    load();
-  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -78,7 +75,6 @@ export function KanbanBoard() {
     const currentStage = deals.find((d) => d.id === draggedDealId)?.stage;
     if (currentStage === targetStage) return;
 
-    // Optimistic update
     setDeals((prev) =>
       prev.map((deal) =>
         deal.id === draggedDealId
@@ -89,7 +85,6 @@ export function KanbanBoard() {
 
     const result = await moveDeal(draggedDealId, targetStage);
     if (result.error) {
-      // Revert on failure
       const prevStage = previousStageRef.current;
       if (prevStage) {
         setDeals((prev) =>
@@ -109,27 +104,66 @@ export function KanbanBoard() {
   }
 
   async function handleDealCreated(input: {
-    title: string; lead_id: string; value: number; due_date?: string;
+    title: string;
+    lead_id: string;
+    value: number;
+    due_date?: string;
   }) {
     if (!addingToStage) return;
     const result = await createDeal({ ...input, stage: addingToStage });
     if (result.error) { toast.error(result.error); return; }
+    if (!result.deal) { toast.error("Erro inesperado. Tente novamente."); return; }
     setDeals((prev) => [result.deal!, ...prev]);
     toast.success("Negócio criado com sucesso.");
     setAddingToStage(null);
   }
 
+  async function handleDealUpdated(input: {
+    title: string;
+    lead_id: string;
+    value: number;
+    due_date?: string;
+  }) {
+    if (!editingDeal) return;
+    const result = await updateDeal(editingDeal.id, {
+      title: input.title,
+      lead_id: input.lead_id,
+      value: input.value,
+      due_date: input.due_date ?? null,
+    });
+    if (result.error) { toast.error(result.error); return; }
+    if (!result.deal) { toast.error("Erro inesperado. Tente novamente."); return; }
+    setDeals((prev) => prev.map((d) => (d.id === editingDeal.id ? result.deal! : d)));
+    toast.success("Negócio atualizado.");
+    setEditingDeal(null);
+  }
+
+  async function handleDealDeleted(id: string) {
+    const snapshotIndex = deals.findIndex((d) => d.id === id);
+    const snapshot = deals[snapshotIndex];
+    setDeals((prev) => prev.filter((d) => d.id !== id));
+    const result = await deleteDeal(id);
+    if (result.error) {
+      if (snapshot !== undefined) {
+        setDeals((prev) => {
+          const next = [...prev];
+          next.splice(snapshotIndex, 0, snapshot);
+          return next;
+        });
+      }
+      toast.error(result.error);
+    } else {
+      toast.error("Negócio excluído.");
+    }
+  }
+
   const getDealsForStage = (stage: DealStage) => deals.filter((d) => d.stage === stage);
 
-  if (loading) {
+  if (fetchError) {
     return (
-      <div className="flex gap-4 overflow-x-auto pb-4 px-1 -mx-1">
-        {STAGES.map((stage) => (
-          <div
-            key={stage}
-            className="w-72 flex-shrink-0 h-64 rounded-xl border border-border bg-muted/30 animate-pulse"
-          />
-        ))}
+      <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        <AlertCircleIcon className="size-4 shrink-0" />
+        {fetchError}
       </div>
     );
   }
@@ -150,7 +184,9 @@ export function KanbanBoard() {
               stage={stage}
               deals={getDealsForStage(stage)}
               leads={leads}
-              onAddDeal={() => setAddingToStage(stage)}
+              onAddDeal={() => { setEditingDeal(null); setAddingToStage(stage); }}
+              onEditDeal={(deal) => { setAddingToStage(null); setEditingDeal(deal); }}
+              onDeleteDeal={handleDealDeleted}
             />
           ))}
         </div>
@@ -166,9 +202,21 @@ export function KanbanBoard() {
         <DealForm
           stage={addingToStage}
           leads={leads}
-          open={addingToStage !== null}
+          open
           onOpenChange={(open) => { if (!open) setAddingToStage(null); }}
           onSuccess={handleDealCreated}
+        />
+      )}
+
+      {editingDeal && (
+        <DealForm
+          key={editingDeal.id}
+          stage={editingDeal.stage}
+          leads={leads}
+          open
+          deal={editingDeal}
+          onOpenChange={(open) => { if (!open) setEditingDeal(null); }}
+          onSuccess={handleDealUpdated}
         />
       )}
     </>

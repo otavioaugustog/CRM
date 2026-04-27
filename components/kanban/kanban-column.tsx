@@ -1,8 +1,7 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { useSortable } from "@dnd-kit/sortable";
+import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,12 +20,12 @@ export const STAGE_LABELS: Record<DealStage, string> = {
 };
 
 const STAGE_DOT_COLOR: Record<DealStage, string> = {
-  novo_lead: "#94a3b8",        // slate-400
-  contato_realizado: "#60a5fa", // blue-400
-  proposta_enviada: "#8b5cf6",  // violet-500
-  negociacao: "#f59e0b",        // amber-500
-  fechado_ganho: "#10b981",     // emerald-500
-  fechado_perdido: "#f43f5e",   // rose-500
+  novo_lead: "#94a3b8",
+  contato_realizado: "#60a5fa",
+  proposta_enviada: "#8b5cf6",
+  negociacao: "#f59e0b",
+  fechado_ganho: "#10b981",
+  fechado_perdido: "#f43f5e",
 };
 
 const STAGE_BG_CLASS: Record<DealStage, string> = {
@@ -38,16 +37,19 @@ const STAGE_BG_CLASS: Record<DealStage, string> = {
   fechado_perdido: "bg-stage-perdido",
 };
 
-// Sortable wrapper for each card
-function SortableCard({ deal, lead }: { deal: Deal; lead: Lead | undefined }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: deal.id });
+function SortableCard({
+  deal,
+  lead,
+  onEdit,
+  onDelete,
+}: {
+  deal: Deal;
+  lead: Lead | undefined;
+  onEdit: (deal: Deal) => void;
+  onDelete: (id: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: deal.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -56,7 +58,13 @@ function SortableCard({ deal, lead }: { deal: Deal; lead: Lead | undefined }) {
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <KanbanCard deal={deal} lead={lead} isDragging={isDragging} />
+      <KanbanCard
+        deal={deal}
+        lead={lead}
+        isDragging={isDragging}
+        onEdit={onEdit}
+        onDelete={onDelete}
+      />
     </div>
   );
 }
@@ -65,10 +73,19 @@ interface KanbanColumnProps {
   stage: DealStage;
   deals: Deal[];
   leads: Lead[];
-  onAddDeal: (stage: DealStage) => void;
+  onAddDeal: () => void;
+  onEditDeal: (deal: Deal) => void;
+  onDeleteDeal: (id: string) => void;
 }
 
-export function KanbanColumn({ stage, deals, leads, onAddDeal }: KanbanColumnProps) {
+export function KanbanColumn({
+  stage,
+  deals,
+  leads,
+  onAddDeal,
+  onEditDeal,
+  onDeleteDeal,
+}: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: stage });
 
   const columnTotal = deals.reduce((sum, d) => sum + d.value, 0);
@@ -118,6 +135,8 @@ export function KanbanColumn({ stage, deals, leads, onAddDeal }: KanbanColumnPro
               key={deal.id}
               deal={deal}
               lead={getLeadForDeal(deal)}
+              onEdit={onEditDeal}
+              onDelete={onDeleteDeal}
             />
           ))}
         </SortableContext>
@@ -134,7 +153,7 @@ export function KanbanColumn({ stage, deals, leads, onAddDeal }: KanbanColumnPro
           variant="ghost"
           size="sm"
           className="w-full justify-start gap-1.5 text-muted-foreground hover:text-foreground"
-          onClick={() => onAddDeal(stage)}
+          onClick={onAddDeal}
         >
           <PlusIcon className="size-3.5" />
           Negócio
