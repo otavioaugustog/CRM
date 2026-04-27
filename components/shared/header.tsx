@@ -1,9 +1,12 @@
 "use client";
 
+import { useState } from "react";
+import { toast } from "sonner";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Menu } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -15,6 +18,7 @@ import {
 import { signOut } from "@/app/actions/auth";
 import { getInitials } from "@/lib/utils";
 import type { User } from "@supabase/supabase-js";
+import type { WorkspacePlan } from "@/types";
 import { NotificationBell } from "@/components/shared/notification-bell";
 import { RecentActivitiesButton } from "@/components/shared/recent-activities-button";
 
@@ -22,32 +26,47 @@ const PAGE_TITLES: Record<string, string> = {
   "/dashboard": "Dashboard",
   "/leads": "Leads",
   "/pipeline": "Pipeline",
-  "/settings": "Configurações",
+  "/settings/profile": "Meu Perfil",
   "/settings/billing": "Planos e cobrança",
+  "/settings": "Configurações",
 };
 
 function usePageTitle() {
   const pathname = usePathname();
   const sorted = Object.entries(PAGE_TITLES).sort((a, b) => b[0].length - a[0].length);
   for (const [path, title] of sorted) {
-    if (pathname.startsWith(path)) return title;
+    if (pathname === path || pathname.startsWith(path + "/")) return title;
   }
   return "Dashboard";
 }
 
 interface HeaderProps {
   user: User;
+  plan?: WorkspacePlan;
   onMenuClick?: () => void;
 }
 
-export function Header({ user, onMenuClick }: HeaderProps) {
+export function Header({ user, plan, onMenuClick }: HeaderProps) {
   const title = usePageTitle();
+  const [signingOut, setSigningOut] = useState(false);
 
   const rawName: string = user.user_metadata?.name ?? "";
+  const avatarUrl: string = user.user_metadata?.avatar_url ?? "";
   const displayName = rawName || user.email || "";
   const initials = displayName ? getInitials(displayName) : "?";
-  // Só exibe primeiro nome quando vem de metadata real (não é um e-mail)
   const firstName = rawName ? rawName.split(" ")[0] : "";
+
+  async function handleSignOut() {
+    setSigningOut(true);
+    try {
+      await signOut();
+    } catch (e: unknown) {
+      // Next.js redirect() throws a special error — let it propagate
+      if (e && typeof e === "object" && "digest" in e) throw e;
+      setSigningOut(false);
+      toast.error("Erro ao sair. Tente novamente.");
+    }
+  }
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-border bg-card px-4">
@@ -75,6 +94,7 @@ export function Header({ user, onMenuClick }: HeaderProps) {
             className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-secondary focus-visible:outline-none"
           >
             <Avatar className="h-7 w-7">
+              {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
               <AvatarFallback className="bg-primary text-primary-foreground text-xs font-bold">
                 {initials}
               </AvatarFallback>
@@ -85,28 +105,44 @@ export function Header({ user, onMenuClick }: HeaderProps) {
               </span>
             )}
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <div className="px-2 py-1.5">
-              {displayName && (
-                <p className="text-sm font-medium text-foreground">{displayName}</p>
-              )}
-              {user.email && displayName !== user.email && (
-                <p className="text-xs text-muted-foreground">{user.email}</p>
+
+          <DropdownMenuContent align="end" className="w-56">
+            <div className="flex items-start justify-between gap-2 px-2 py-1.5">
+              <div className="min-w-0">
+                {displayName && (
+                  <p className="truncate text-sm font-medium text-foreground">{displayName}</p>
+                )}
+                {user.email && displayName !== user.email && (
+                  <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+                )}
+              </div>
+              {plan && (
+                <Badge
+                  variant="secondary"
+                  className="shrink-0 h-4 px-1.5 text-[10px] font-bold text-primary"
+                >
+                  {plan === "pro" ? "PRO" : "FREE"}
+                </Badge>
               )}
             </div>
+
             <DropdownMenuSeparator />
-            <DropdownMenuItem disabled>
+
+            <DropdownMenuItem render={<Link href="/settings/profile" />}>
               Perfil
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Link href="/settings" className="w-full">Configurações</Link>
+            <DropdownMenuItem render={<Link href="/settings" />}>
+              Configurações
             </DropdownMenuItem>
+
             <DropdownMenuSeparator />
+
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
-              onClick={async () => { await signOut(); }}
+              disabled={signingOut}
+              onClick={handleSignOut}
             >
-              Sair
+              {signingOut ? "Saindo…" : "Sair"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
