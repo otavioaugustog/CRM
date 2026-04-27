@@ -1,4 +1,4 @@
-// Auto-generated shape para supabase-js v2 createClient<Database>
+// Auto-generated shape para supabase-js v2 — formato com Relationships (obrigatório >= 2.100)
 // Atualizar ao adicionar/modificar tabelas nas migrations.
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
@@ -37,6 +37,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       workspace_members: {
         Row: {
@@ -60,6 +61,7 @@ export interface Database {
           role?: 'admin' | 'member'
           created_at?: string
         }
+        Relationships: []
       }
       leads: {
         Row: {
@@ -101,6 +103,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       deals: {
         Row: {
@@ -108,13 +111,7 @@ export interface Database {
           workspace_id: string
           title: string
           lead_id: string | null
-          stage:
-            | 'novo_lead'
-            | 'contato_realizado'
-            | 'proposta_enviada'
-            | 'negociacao'
-            | 'fechado_ganho'
-            | 'fechado_perdido'
+          stage: 'novo_lead' | 'contato_realizado' | 'proposta_enviada' | 'negociacao' | 'fechado_ganho' | 'fechado_perdido'
           value: number
           owner_id: string
           due_date: string | null
@@ -126,13 +123,7 @@ export interface Database {
           workspace_id: string
           title: string
           lead_id?: string | null
-          stage?:
-            | 'novo_lead'
-            | 'contato_realizado'
-            | 'proposta_enviada'
-            | 'negociacao'
-            | 'fechado_ganho'
-            | 'fechado_perdido'
+          stage?: 'novo_lead' | 'contato_realizado' | 'proposta_enviada' | 'negociacao' | 'fechado_ganho' | 'fechado_perdido'
           value?: number
           owner_id: string
           due_date?: string | null
@@ -144,19 +135,14 @@ export interface Database {
           workspace_id?: string
           title?: string
           lead_id?: string | null
-          stage?:
-            | 'novo_lead'
-            | 'contato_realizado'
-            | 'proposta_enviada'
-            | 'negociacao'
-            | 'fechado_ganho'
-            | 'fechado_perdido'
+          stage?: 'novo_lead' | 'contato_realizado' | 'proposta_enviada' | 'negociacao' | 'fechado_ganho' | 'fechado_perdido'
           value?: number
           owner_id?: string
           due_date?: string | null
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       activities: {
         Row: {
@@ -186,6 +172,7 @@ export interface Database {
           author_id?: string
           created_at?: string
         }
+        Relationships: []
       }
       invitations: {
         Row: {
@@ -218,6 +205,7 @@ export interface Database {
           accepted_at?: string | null
           created_at?: string
         }
+        Relationships: []
       }
     }
     Views: Record<string, never>

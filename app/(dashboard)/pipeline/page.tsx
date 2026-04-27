@@ -1,6 +1,13 @@
 import { KanbanBoard } from "@/components/kanban/kanban-board";
+import { fetchDeals } from "@/app/actions/deals";
+import { fetchLeads } from "@/app/actions/leads";
 
-export default function PipelinePage() {
+export default async function PipelinePage() {
+  const [{ deals, error }, leads] = await Promise.all([
+    fetchDeals(),
+    fetchLeads(),
+  ]);
+
   return (
     <div className="flex flex-col gap-6 h-full">
       <div>
@@ -9,7 +16,11 @@ export default function PipelinePage() {
           Gerencie seus negócios no funil de vendas.
         </p>
       </div>
-      <KanbanBoard />
+      <KanbanBoard
+        initialDeals={deals}
+        initialLeads={leads}
+        fetchError={error}
+      />
     </div>
   );
 }
